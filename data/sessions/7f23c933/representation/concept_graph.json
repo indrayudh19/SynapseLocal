@@ -1,0 +1,1865 @@
+{
+  "concepts": [
+    {
+      "key": "modern platform",
+      "name": "modern platform",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0000",
+        "7f23c933_chunk_0015"
+      ],
+      "global": false
+    },
+    {
+      "key": "cloud native architecture",
+      "name": "Cloud Native Architecture",
+      "support": 14,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0000",
+        "7f23c933_chunk_0001",
+        "7f23c933_chunk_0006",
+        "7f23c933_chunk_0013",
+        "7f23c933_chunk_0015",
+        "7f23c933_chunk_0017",
+        "7f23c933_chunk_0022",
+        "7f23c933_chunk_0023",
+        "7f23c933_chunk_0025",
+        "7f23c933_chunk_0028",
+        "7f23c933_chunk_0045",
+        "7f23c933_chunk_0050",
+        "7f23c933_chunk_0053",
+        "7f23c933_chunk_0056"
+      ],
+      "global": true
+    },
+    {
+      "key": "polyglot persistence layer",
+      "name": "polyglot persistence layer",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0001"
+      ],
+      "global": false
+    },
+    {
+      "key": "bounded context",
+      "name": "bounded context",
+      "support": 7,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0001",
+        "7f23c933_chunk_0013",
+        "7f23c933_chunk_0015",
+        "7f23c933_chunk_0020",
+        "7f23c933_chunk_0022",
+        "7f23c933_chunk_0023",
+        "7f23c933_chunk_0025"
+      ],
+      "global": false
+    },
+    {
+      "key": "container - kubernete",
+      "name": "Container - Kubernetes",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0001"
+      ],
+      "global": false
+    },
+    {
+      "key": "domain -driven design",
+      "name": "Domain Driven Design",
+      "support": 6,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0001",
+        "7f23c933_chunk_0011",
+        "7f23c933_chunk_0013",
+        "7f23c933_chunk_0015",
+        "7f23c933_chunk_0017",
+        "7f23c933_chunk_0020"
+      ],
+      "global": false
+    },
+    {
+      "key": "micro service",
+      "name": "micro services",
+      "support": 12,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0001",
+        "7f23c933_chunk_0005",
+        "7f23c933_chunk_0006",
+        "7f23c933_chunk_0008",
+        "7f23c933_chunk_0011",
+        "7f23c933_chunk_0015",
+        "7f23c933_chunk_0022",
+        "7f23c933_chunk_0023",
+        "7f23c933_chunk_0032",
+        "7f23c933_chunk_0034",
+        "7f23c933_chunk_0037",
+        "7f23c933_chunk_0039"
+      ],
+      "global": true
+    },
+    {
+      "key": "software architectural style",
+      "name": "software architectural style",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0004"
+      ],
+      "global": false
+    },
+    {
+      "key": "application",
+      "name": "application",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0004"
+      ],
+      "global": false
+    },
+    {
+      "key": "microservices architecture",
+      "name": "microservices architecture",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0004"
+      ],
+      "global": false
+    },
+    {
+      "key": "resilience",
+      "name": "resilience",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0005"
+      ],
+      "global": false
+    },
+    {
+      "key": "scalability",
+      "name": "scalability",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0005",
+        "7f23c933_chunk_0023"
+      ],
+      "global": false
+    },
+    {
+      "key": "technology agnostic",
+      "name": "technology agnostic",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0005"
+      ],
+      "global": false
+    },
+    {
+      "key": "single responsibility",
+      "name": "single responsibility",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0005"
+      ],
+      "global": false
+    },
+    {
+      "key": "communication",
+      "name": "communication",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0005",
+        "7f23c933_chunk_0037"
+      ],
+      "global": false
+    },
+    {
+      "key": "decentralized data",
+      "name": "decentralized data",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0005"
+      ],
+      "global": false
+    },
+    {
+      "key": "independence",
+      "name": "independence",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0005"
+      ],
+      "global": false
+    },
+    {
+      "key": "devop",
+      "name": "DevOps",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0006"
+      ],
+      "global": false
+    },
+    {
+      "key": "deployment",
+      "name": "deployment",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0006",
+        "7f23c933_chunk_0037"
+      ],
+      "global": false
+    },
+    {
+      "key": "cicd",
+      "name": "CI/CD",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0006"
+      ],
+      "global": false
+    },
+    {
+      "key": "orchestration",
+      "name": "orchestration",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0008",
+        "7f23c933_chunk_0037"
+      ],
+      "global": false
+    },
+    {
+      "key": "containerization",
+      "name": "containerization",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0008",
+        "7f23c933_chunk_0037"
+      ],
+      "global": false
+    },
+    {
+      "key": "business domain",
+      "name": "business domain",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0011"
+      ],
+      "global": false
+    },
+    {
+      "key": "technical implementation",
+      "name": "technical implementation",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0011"
+      ],
+      "global": false
+    },
+    {
+      "key": "domain",
+      "name": "Domain",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0013"
+      ],
+      "global": false
+    },
+    {
+      "key": "order management",
+      "name": "Order Management",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0013",
+        "7f23c933_chunk_0025"
+      ],
+      "global": false
+    },
+    {
+      "key": "inventory management",
+      "name": "Inventory Management",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0013"
+      ],
+      "global": false
+    },
+    {
+      "key": "ubiquitous language",
+      "name": "Ubiquitous Language",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0013",
+        "7f23c933_chunk_0022"
+      ],
+      "global": false
+    },
+    {
+      "key": "banking system",
+      "name": "Banking System",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0017"
+      ],
+      "global": false
+    },
+    {
+      "key": "healthcare",
+      "name": "Healthcare",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0017",
+        "7f23c933_chunk_0039"
+      ],
+      "global": false
+    },
+    {
+      "key": "ride-sharing app",
+      "name": "Ride-Sharing App",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0017"
+      ],
+      "global": false
+    },
+    {
+      "key": "erp system",
+      "name": "ERP System",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0017"
+      ],
+      "global": false
+    },
+    {
+      "key": "real-time application",
+      "name": "Real-Time Application",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0017",
+        "7f23c933_chunk_0025"
+      ],
+      "global": false
+    },
+    {
+      "key": "e-commerce",
+      "name": "E-commerce",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0017"
+      ],
+      "global": false
+    },
+    {
+      "key": "concept",
+      "name": "concept",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0020"
+      ],
+      "global": false
+    },
+    {
+      "key": "rule",
+      "name": "rule",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0020"
+      ],
+      "global": false
+    },
+    {
+      "key": "team",
+      "name": "team",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0020"
+      ],
+      "global": false
+    },
+    {
+      "key": "e-commerce platform",
+      "name": "e-commerce platform",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0020"
+      ],
+      "global": false
+    },
+    {
+      "key": "term",
+      "name": "term",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0020"
+      ],
+      "global": false
+    },
+    {
+      "key": "core principle",
+      "name": "core principle",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0022"
+      ],
+      "global": false
+    },
+    {
+      "key": "domain model",
+      "name": "domain model",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0023"
+      ],
+      "global": false
+    },
+    {
+      "key": "developer",
+      "name": "developer",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0023"
+      ],
+      "global": false
+    },
+    {
+      "key": "business expert",
+      "name": "business expert",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0023"
+      ],
+      "global": false
+    },
+    {
+      "key": "end-to-end",
+      "name": "end-to-end",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0028"
+      ],
+      "global": false
+    },
+    {
+      "key": "presentation layer",
+      "name": "presentation layer",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0028"
+      ],
+      "global": false
+    },
+    {
+      "key": "data layer",
+      "name": "data layer",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0028"
+      ],
+      "global": false
+    },
+    {
+      "key": "integration layer",
+      "name": "integration layer",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0028"
+      ],
+      "global": false
+    },
+    {
+      "key": "application layer",
+      "name": "application layer",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0028"
+      ],
+      "global": false
+    },
+    {
+      "key": "html",
+      "name": "HTML",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0029"
+      ],
+      "global": false
+    },
+    {
+      "key": "frontend",
+      "name": "frontend",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0029"
+      ],
+      "global": false
+    },
+    {
+      "key": "ui",
+      "name": "UI",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0029"
+      ],
+      "global": false
+    },
+    {
+      "key": "form",
+      "name": "form",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0029"
+      ],
+      "global": false
+    },
+    {
+      "key": "mongodb",
+      "name": "MongoDB",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0032"
+      ],
+      "global": false
+    },
+    {
+      "key": "user service",
+      "name": "User Service",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0032"
+      ],
+      "global": false
+    },
+    {
+      "key": "payment service",
+      "name": "Payment Service",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0032",
+        "7f23c933_chunk_0042"
+      ],
+      "global": false
+    },
+    {
+      "key": "mysql",
+      "name": "MySQL",
+      "support": 3,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0032",
+        "7f23c933_chunk_0042",
+        "7f23c933_chunk_0053"
+      ],
+      "global": false
+    },
+    {
+      "key": "load balancer",
+      "name": "Load Balancer",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0034"
+      ],
+      "global": false
+    },
+    {
+      "key": "implementation mechanism",
+      "name": "implementation mechanism",
+      "support": 3,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0034",
+        "7f23c933_chunk_0037",
+        "7f23c933_chunk_0039"
+      ],
+      "global": false
+    },
+    {
+      "key": "service discovery",
+      "name": "Service Discovery",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0034"
+      ],
+      "global": false
+    },
+    {
+      "key": "inter - service communication",
+      "name": "inter - service communication",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0034"
+      ],
+      "global": false
+    },
+    {
+      "key": "data management",
+      "name": "data management",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0037"
+      ],
+      "global": false
+    },
+    {
+      "key": "decomposition",
+      "name": "decomposition",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0037"
+      ],
+      "global": false
+    },
+    {
+      "key": "kubernete",
+      "name": "Kubernetes",
+      "support": 6,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0042",
+        "7f23c933_chunk_0045",
+        "7f23c933_chunk_0047",
+        "7f23c933_chunk_0050",
+        "7f23c933_chunk_0053",
+        "7f23c933_chunk_0056"
+      ],
+      "global": false
+    },
+    {
+      "key": "networking",
+      "name": "networking",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0042",
+        "7f23c933_chunk_0056"
+      ],
+      "global": false
+    },
+    {
+      "key": "overlay network",
+      "name": "overlay network",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0042"
+      ],
+      "global": false
+    },
+    {
+      "key": "container",
+      "name": "Container",
+      "support": 6,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0042",
+        "7f23c933_chunk_0045",
+        "7f23c933_chunk_0047",
+        "7f23c933_chunk_0050",
+        "7f23c933_chunk_0053",
+        "7f23c933_chunk_0056"
+      ],
+      "global": false
+    },
+    {
+      "key": "secret",
+      "name": "Secret",
+      "support": 2,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0045",
+        "7f23c933_chunk_0050"
+      ],
+      "global": false
+    },
+    {
+      "key": "environment variable",
+      "name": "Environment Variable",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0045"
+      ],
+      "global": false
+    },
+    {
+      "key": "configuration",
+      "name": "Configuration",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0045"
+      ],
+      "global": false
+    },
+    {
+      "key": "container image",
+      "name": "container image",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0047"
+      ],
+      "global": false
+    },
+    {
+      "key": "docker hub",
+      "name": "Docker Hub",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0047"
+      ],
+      "global": false
+    },
+    {
+      "key": "registry",
+      "name": "registry",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0047"
+      ],
+      "global": false
+    },
+    {
+      "key": "food delivery app",
+      "name": "Food Delivery app",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0047"
+      ],
+      "global": false
+    },
+    {
+      "key": "persistent volume claim",
+      "name": "Persistent Volume Claim",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0053"
+      ],
+      "global": false
+    },
+    {
+      "key": "statefulset",
+      "name": "StatefulSet",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0053"
+      ],
+      "global": false
+    },
+    {
+      "key": "persistent volume",
+      "name": "Persistent Volume",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0053"
+      ],
+      "global": false
+    },
+    {
+      "key": "service mesh",
+      "name": "Service Mesh",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0056"
+      ],
+      "global": false
+    },
+    {
+      "key": "pod",
+      "name": "Pods",
+      "support": 1,
+      "sources": [
+        "U3 CNAforMP 21CSE477T.pdf"
+      ],
+      "chunk_ids": [
+        "7f23c933_chunk_0056"
+      ],
+      "global": false
+    }
+  ],
+  "relations": [
+    {
+      "source": "Cloud Native Architecture",
+      "source_key": "cloud native architecture",
+      "relation": "related_to",
+      "target": "modern platform",
+      "target_key": "modern platform",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "micro services",
+      "source_key": "micro service",
+      "relation": "related_to",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "polyglot persistence layer",
+      "source_key": "polyglot persistence layer",
+      "relation": "example_of",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "part_of",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 2,
+      "weight": 5.079
+    },
+    {
+      "source": "Container - Kubernetes",
+      "source_key": "container - kubernete",
+      "relation": "part_of",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "microservices architecture",
+      "source_key": "microservices architecture",
+      "relation": "type_of",
+      "target": "software architectural style",
+      "target_key": "software architectural style",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "microservices architecture",
+      "source_key": "microservices architecture",
+      "relation": "example_of",
+      "target": "application",
+      "target_key": "application",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "independence",
+      "source_key": "independence",
+      "relation": "related_to",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "single responsibility",
+      "source_key": "single responsibility",
+      "relation": "related_to",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "technology agnostic",
+      "source_key": "technology agnostic",
+      "relation": "related_to",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "decentralized data",
+      "source_key": "decentralized data",
+      "relation": "related_to",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "communication",
+      "source_key": "communication",
+      "relation": "uses",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 2,
+      "weight": 2.54
+    },
+    {
+      "source": "resilience",
+      "source_key": "resilience",
+      "relation": "related_to",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "scalability",
+      "source_key": "scalability",
+      "relation": "related_to",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "micro services",
+      "source_key": "micro service",
+      "relation": "type_of",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "micro services",
+      "source_key": "micro service",
+      "relation": "uses",
+      "target": "DevOps",
+      "target_key": "devop",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "micro services",
+      "source_key": "micro service",
+      "relation": "uses",
+      "target": "CI/CD",
+      "target_key": "cicd",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Domain Driven Design",
+      "source_key": "domain -driven design",
+      "relation": "uses",
+      "target": "business domain",
+      "target_key": "business domain",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Domain Driven Design",
+      "source_key": "domain -driven design",
+      "relation": "uses",
+      "target": "technical implementation",
+      "target_key": "technical implementation",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Domain",
+      "source_key": "domain",
+      "relation": "part_of",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Ubiquitous Language",
+      "source_key": "ubiquitous language",
+      "relation": "related_to",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "related_to",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "Order Management",
+      "source_key": "order management",
+      "relation": "example_of",
+      "target": "bounded context",
+      "target_key": "bounded context",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Inventory Management",
+      "source_key": "inventory management",
+      "relation": "example_of",
+      "target": "bounded context",
+      "target_key": "bounded context",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Domain Driven Design",
+      "source_key": "domain -driven design",
+      "relation": "uses",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Domain Driven Design",
+      "source_key": "domain -driven design",
+      "relation": "part_of",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Domain Driven Design",
+      "source_key": "domain -driven design",
+      "relation": "related_to",
+      "target": "modern platform",
+      "target_key": "modern platform",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "Domain Driven Design",
+      "source_key": "domain -driven design",
+      "relation": "related_to",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "Domain Driven Design",
+      "source_key": "domain -driven design",
+      "relation": "uses",
+      "target": "Real-Time Application",
+      "target_key": "real-time application",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Banking System",
+      "source_key": "banking system",
+      "relation": "example_of",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "E-commerce",
+      "source_key": "e-commerce",
+      "relation": "example_of",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Healthcare",
+      "source_key": "healthcare",
+      "relation": "example_of",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Ride-Sharing App",
+      "source_key": "ride-sharing app",
+      "relation": "example_of",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "ERP System",
+      "source_key": "erp system",
+      "relation": "example_of",
+      "target": "Domain Driven Design",
+      "target_key": "domain -driven design",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "example_of",
+      "target": "e-commerce platform",
+      "target_key": "e-commerce platform",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "term",
+      "source_key": "term",
+      "relation": "part_of",
+      "target": "bounded context",
+      "target_key": "bounded context",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "concept",
+      "source_key": "concept",
+      "relation": "part_of",
+      "target": "bounded context",
+      "target_key": "bounded context",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "rule",
+      "source_key": "rule",
+      "relation": "part_of",
+      "target": "bounded context",
+      "target_key": "bounded context",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "team",
+      "source_key": "team",
+      "relation": "related_to",
+      "target": "bounded context",
+      "target_key": "bounded context",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "related_to",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 2,
+      "weight": 1.693
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "type_of",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "uses",
+      "target": "core principle",
+      "target_key": "core principle",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "uses",
+      "target": "Ubiquitous Language",
+      "target_key": "ubiquitous language",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "example_of",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "uses",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "uses",
+      "target": "domain model",
+      "target_key": "domain model",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "uses",
+      "target": "business expert",
+      "target_key": "business expert",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "uses",
+      "target": "developer",
+      "target_key": "developer",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "example_of",
+      "target": "Real-Time Application",
+      "target_key": "real-time application",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "part_of",
+      "target": "Real-Time Application",
+      "target_key": "real-time application",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "bounded context",
+      "source_key": "bounded context",
+      "relation": "part_of",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "presentation layer",
+      "source_key": "presentation layer",
+      "relation": "part_of",
+      "target": "end-to-end",
+      "target_key": "end-to-end",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "application layer",
+      "source_key": "application layer",
+      "relation": "part_of",
+      "target": "end-to-end",
+      "target_key": "end-to-end",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "data layer",
+      "source_key": "data layer",
+      "relation": "part_of",
+      "target": "end-to-end",
+      "target_key": "end-to-end",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "integration layer",
+      "source_key": "integration layer",
+      "relation": "related_to",
+      "target": "end-to-end",
+      "target_key": "end-to-end",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "frontend",
+      "source_key": "frontend",
+      "relation": "type_of",
+      "target": "UI",
+      "target_key": "ui",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "HTML",
+      "source_key": "html",
+      "relation": "uses",
+      "target": "form",
+      "target_key": "form",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "User Service",
+      "source_key": "user service",
+      "relation": "uses",
+      "target": "MongoDB",
+      "target_key": "mongodb",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Payment Service",
+      "source_key": "payment service",
+      "relation": "uses",
+      "target": "MySQL",
+      "target_key": "mysql",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "micro services",
+      "source_key": "micro service",
+      "relation": "uses",
+      "target": "inter - service communication",
+      "target_key": "inter - service communication",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Service Discovery",
+      "source_key": "service discovery",
+      "relation": "example_of",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Service Discovery",
+      "source_key": "service discovery",
+      "relation": "related_to",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.0
+    },
+    {
+      "source": "Load Balancer",
+      "source_key": "load balancer",
+      "relation": "uses",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "decomposition",
+      "source_key": "decomposition",
+      "relation": "type_of",
+      "target": "implementation mechanism",
+      "target_key": "implementation mechanism",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "containerization",
+      "source_key": "containerization",
+      "relation": "uses",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "orchestration",
+      "source_key": "orchestration",
+      "relation": "uses",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "data management",
+      "source_key": "data management",
+      "relation": "uses",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "deployment",
+      "source_key": "deployment",
+      "relation": "uses",
+      "target": "micro services",
+      "target_key": "micro service",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Container",
+      "source_key": "container",
+      "relation": "uses",
+      "target": "networking",
+      "target_key": "networking",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "overlay network",
+      "source_key": "overlay network",
+      "relation": "part_of",
+      "target": "Kubernetes",
+      "target_key": "kubernete",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Environment Variable",
+      "source_key": "environment variable",
+      "relation": "type_of",
+      "target": "Configuration",
+      "target_key": "configuration",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Secret",
+      "source_key": "secret",
+      "relation": "type_of",
+      "target": "Configuration",
+      "target_key": "configuration",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Secret",
+      "source_key": "secret",
+      "relation": "example_of",
+      "target": "Configuration",
+      "target_key": "configuration",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "container image",
+      "source_key": "container image",
+      "relation": "part_of",
+      "target": "Container",
+      "target_key": "container",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "container image",
+      "source_key": "container image",
+      "relation": "uses",
+      "target": "Container",
+      "target_key": "container",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "registry",
+      "source_key": "registry",
+      "relation": "uses",
+      "target": "container image",
+      "target_key": "container image",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Docker Hub",
+      "source_key": "docker hub",
+      "relation": "example_of",
+      "target": "registry",
+      "target_key": "registry",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Food Delivery app",
+      "source_key": "food delivery app",
+      "relation": "uses",
+      "target": "container image",
+      "target_key": "container image",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "StatefulSet",
+      "source_key": "statefulset",
+      "relation": "part_of",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "StatefulSet",
+      "source_key": "statefulset",
+      "relation": "uses",
+      "target": "Persistent Volume",
+      "target_key": "persistent volume",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "StatefulSet",
+      "source_key": "statefulset",
+      "relation": "uses",
+      "target": "Persistent Volume Claim",
+      "target_key": "persistent volume claim",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Persistent Volume",
+      "source_key": "persistent volume",
+      "relation": "part_of",
+      "target": "Kubernetes",
+      "target_key": "kubernete",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Persistent Volume Claim",
+      "source_key": "persistent volume claim",
+      "relation": "part_of",
+      "target": "Kubernetes",
+      "target_key": "kubernete",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Pods",
+      "source_key": "pod",
+      "relation": "part_of",
+      "target": "Kubernetes",
+      "target_key": "kubernete",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Pods",
+      "source_key": "pod",
+      "relation": "part_of",
+      "target": "Container",
+      "target_key": "container",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Kubernetes",
+      "source_key": "kubernete",
+      "relation": "part_of",
+      "target": "Cloud Native Architecture",
+      "target_key": "cloud native architecture",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Kubernetes",
+      "source_key": "kubernete",
+      "relation": "uses",
+      "target": "networking",
+      "target_key": "networking",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Kubernetes",
+      "source_key": "kubernete",
+      "relation": "uses",
+      "target": "Service Mesh",
+      "target_key": "service mesh",
+      "support": 1,
+      "weight": 1.5
+    },
+    {
+      "source": "Kubernetes",
+      "source_key": "kubernete",
+      "relation": "part_of",
+      "target": "Container",
+      "target_key": "container",
+      "support": 1,
+      "weight": 3.0
+    },
+    {
+      "source": "Service Mesh",
+      "source_key": "service mesh",
+      "relation": "related_to",
+      "target": "Kubernetes",
+      "target_key": "kubernete",
+      "support": 1,
+      "weight": 1.0
+    }
+  ],
+  "global_topics": [
+    "Cloud Native Architecture",
+    "micro services"
+  ],
+  "unlinked": [
+    "document store",
+    "regular star schema",
+    "lightweight protocols",
+    "independently deployable",
+    "small",
+    "business function",
+    "loosely coupled",
+    "fault isolation",
+    "scaling",
+    "development",
+    "Amazon",
+    "banking",
+    "Netflix",
+    "Uber",
+    "Spotify",
+    "cloud-native",
+    "Eric Evans",
+    "Complexity",
+    "Aligns",
+    "Reduces",
+    "maintainability",
+    "Inventory",
+    "Payments",
+    "Customer Service",
+    "Database",
+    "API",
+    "API Gateway",
+    "Consul",
+    "Netflix Eureka",
+    "Order Service",
+    "customer order history",
+    "Port number",
+    "Database URL",
+    "Namespace",
+    "ConfigMap",
+    "PostgreSQL",
+    "Linkerd",
+    "Istio"
+  ],
+  "stats": {
+    "n_concepts": 78,
+    "n_relations": 90,
+    "n_hierarchy_edges": 43,
+    "n_global": 2,
+    "n_unlinked": 38
+  }
+}
