@@ -1,0 +1,1542 @@
+{
+  "status": "ok",
+  "clusters": [
+    {
+      "id": 0,
+      "hub": "cloud native architecture",
+      "size": 15,
+      "members": [
+        {
+          "name": "UI",
+          "weight": 6.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "food delivery app",
+          "weight": 6.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Product Service",
+          "weight": 4.5,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "presentation layer",
+          "weight": 4.5,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "integration layer",
+          "weight": 4.5,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "data layer",
+          "weight": 4.5,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "application layer",
+          "weight": 4.5,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Database",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "API",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "frontend",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "healthcare workflow",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "IoT smart home",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "product",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Modern Platform",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 1,
+      "hub": "serverless architecture",
+      "size": 20,
+      "members": [
+        {
+          "name": "cloud provider",
+          "weight": 14.08,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "traditional architecture",
+          "weight": 6.0,
+          "link_to_hub": "direct:type_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "FaaS",
+          "weight": 6.0,
+          "link_to_hub": "direct:type_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "server",
+          "weight": 5.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "function modeling",
+          "weight": 4.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "GCP",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Azure",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "AWS",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "stateless",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "BaaS",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "billing",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "cold start",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Node.js function",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "scalable",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "pay-per-use",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "image/video processing",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "cloud service",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "chatbot",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "IoT processing",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 2,
+      "hub": "function",
+      "size": 37,
+      "members": [
+        {
+          "name": "workflow",
+          "weight": 15.08,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "runtime",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "execution environment",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "event",
+          "weight": 14.54,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "trigger",
+          "weight": 4.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "orchestration",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "choreography",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "payment",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "inventory",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "function logic",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "email",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "business process",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "debugging complexity",
+          "weight": 2.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "REST API",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "scalability",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "healthcare",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "SQS",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "NATS",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Apache Kafka",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "AWS SNS",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "social media",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "simplicity",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "reusability",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "resilience",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "modularity",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "faster development",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "education platforms",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "IoT applications",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Function-as-a-Service",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "user",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "single responsibility",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "monolithic application",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "latency",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "composable",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "cloud-managed lifecycle",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "IoT device",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 3,
+      "hub": "microservice",
+      "size": 26,
+      "members": [
+        {
+          "name": "User Service",
+          "weight": 8.08,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "service discovery",
+          "weight": 4.5,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "monolithic",
+          "weight": 4.5,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Payment Service",
+          "weight": 4.5,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Inventory service",
+          "weight": 4.5,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "API Gateway",
+          "weight": 4.04,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "container resource management",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "order service",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "banking",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Uber",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Netflix",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Amazon",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Recommendation Service",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Order Management service",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "resilience & fault tolerance",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "load balancer",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "lightweight protocol",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "express",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "event-driven communication",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "containerization",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Spotify",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Event Sourcing",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Docker",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "CQRS",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Account Service",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 4,
+      "hub": "inter-service communication",
+      "size": 7,
+      "members": [
+        {
+          "name": "RabbitMQ",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Kafka",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "gRPC",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "HTTP/REST",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "message broker",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "GraphQL",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 5,
+      "hub": "software architectural style",
+      "size": 12,
+      "members": [
+        {
+          "name": "microservices architecture",
+          "weight": 18.0,
+          "link_to_hub": "direct:type_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "event-driven",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "technology choices",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "scaling",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "mTLS",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "fault isolation",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "development cycle",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "circuit breaker",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "JWT",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "DevOps",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "CI/CD pipeline",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 6,
+      "hub": "business domain",
+      "size": 3,
+      "members": [
+        {
+          "name": "e-commerce",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Entity",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 7,
+      "hub": "Kubernetes",
+      "size": 11,
+      "members": [
+        {
+          "name": "Service Mesh",
+          "weight": 9.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Persistent Volume (PV)",
+          "weight": 6.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "StatefulSet",
+          "weight": 4.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Persistent Volume Claim (PVC)",
+          "weight": 4.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Ingress Controller",
+          "weight": 4.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Pod",
+          "weight": 4.5,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "service",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Linkerd",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Istio",
+          "weight": 3.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Namespace",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 8,
+      "hub": "bounded context",
+      "size": 17,
+      "members": [
+        {
+          "name": "Domain-Driven Design",
+          "weight": 9.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "business concept",
+          "weight": 4.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "term",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "rule",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "e-commerce platform",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Order Management",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Inventory Management",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "communication",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "software design approach",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "team",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "domain model",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "developer",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "business expert",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "analysis",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "business problem",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "DDD",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 9,
+      "hub": "function as a service (FaaS)",
+      "size": 9,
+      "members": [
+        {
+          "name": "function as a service",
+          "weight": 11.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Google Cloud Functions",
+          "weight": 6.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Azure Functions",
+          "weight": 6.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "AWS Lambda",
+          "weight": 6.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "IBM Cloud Functions",
+          "weight": 3.0,
+          "link_to_hub": "direct:example_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "event-driven execution",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Python",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "cloud computing",
+          "weight": 1.0,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    },
+    {
+      "id": 10,
+      "hub": "container",
+      "size": 9,
+      "members": [
+        {
+          "name": "container networking",
+          "weight": 4.5,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "container registry",
+          "weight": 3.0,
+          "link_to_hub": "direct:part_of",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "network interface",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "memory limits",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "container image",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "IP",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "CPU limits",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        },
+        {
+          "name": "Bridge",
+          "weight": 1.5,
+          "link_to_hub": "indirect",
+          "sources": [
+            "U3 CNAforMP 21CSE477T.pdf"
+          ]
+        }
+      ],
+      "source_mix": {
+        "U3 CNAforMP 21CSE477T.pdf": 1.0
+      }
+    }
+  ],
+  "links": [
+    {
+      "a": 0,
+      "b": 1,
+      "weight": 2.0,
+      "top_edge": {
+        "source": "serverless architecture",
+        "relation": "related_to",
+        "target": "cloud native architecture"
+      }
+    },
+    {
+      "a": 3,
+      "b": 8,
+      "weight": 8.08,
+      "top_edge": {
+        "source": "microservice",
+        "relation": "type_of",
+        "target": "bounded context"
+      }
+    },
+    {
+      "a": 1,
+      "b": 2,
+      "weight": 11.54,
+      "top_edge": {
+        "source": "function",
+        "relation": "uses",
+        "target": "serverless architecture"
+      }
+    },
+    {
+      "a": 2,
+      "b": 4,
+      "weight": 1.5,
+      "top_edge": {
+        "source": "event",
+        "relation": "uses",
+        "target": "gRPC"
+      }
+    },
+    {
+      "a": 3,
+      "b": 4,
+      "weight": 4.5,
+      "top_edge": {
+        "source": "microservice",
+        "relation": "uses",
+        "target": "HTTP/REST"
+      }
+    },
+    {
+      "a": 5,
+      "b": 8,
+      "weight": 3.0,
+      "top_edge": {
+        "source": "microservices architecture",
+        "relation": "related_to",
+        "target": "Domain-Driven Design"
+      }
+    },
+    {
+      "a": 3,
+      "b": 7,
+      "weight": 5.54,
+      "top_edge": {
+        "source": "Kubernetes",
+        "relation": "uses",
+        "target": "microservice"
+      }
+    },
+    {
+      "a": 6,
+      "b": 8,
+      "weight": 1.0,
+      "top_edge": {
+        "source": "Domain-Driven Design",
+        "relation": "related_to",
+        "target": "business domain"
+      }
+    },
+    {
+      "a": 0,
+      "b": 3,
+      "weight": 7.5,
+      "top_edge": {
+        "source": "Product Service",
+        "relation": "part_of",
+        "target": "microservice"
+      }
+    },
+    {
+      "a": 5,
+      "b": 7,
+      "weight": 1.5,
+      "top_edge": {
+        "source": "microservices architecture",
+        "relation": "uses",
+        "target": "Kubernetes"
+      }
+    },
+    {
+      "a": 2,
+      "b": 3,
+      "weight": 7.5,
+      "top_edge": {
+        "source": "microservice",
+        "relation": "uses",
+        "target": "scalability"
+      }
+    },
+    {
+      "a": 2,
+      "b": 9,
+      "weight": 1.0,
+      "top_edge": {
+        "source": "function as a service",
+        "relation": "related_to",
+        "target": "function"
+      }
+    },
+    {
+      "a": 0,
+      "b": 2,
+      "weight": 4.5,
+      "top_edge": {
+        "source": "function",
+        "relation": "part_of",
+        "target": "cloud native architecture"
+      }
+    },
+    {
+      "a": 5,
+      "b": 10,
+      "weight": 1.5,
+      "top_edge": {
+        "source": "microservices architecture",
+        "relation": "uses",
+        "target": "container"
+      }
+    },
+    {
+      "a": 2,
+      "b": 6,
+      "weight": 1.5,
+      "top_edge": {
+        "source": "function",
+        "relation": "uses",
+        "target": "e-commerce"
+      }
+    },
+    {
+      "a": 5,
+      "b": 9,
+      "weight": 1.5,
+      "top_edge": {
+        "source": "microservices architecture",
+        "relation": "uses",
+        "target": "function as a service"
+      }
+    },
+    {
+      "a": 3,
+      "b": 5,
+      "weight": 10.0,
+      "top_edge": {
+        "source": "microservice",
+        "relation": "part_of",
+        "target": "microservices architecture"
+      }
+    }
+  ],
+  "global_topics": [],
+  "orphans": [
+    "feedback form",
+    "HTML Form"
+  ],
+  "metrics": {
+    "n_concepts_clustered": 166,
+    "n_clusters": 11,
+    "modularity": 0.692,
+    "resolution": 1.0,
+    "hub_coverage": 0.31,
+    "cross_source_concepts": 0,
+    "n_orphans": 2,
+    "n_global": 0
+  }
+}

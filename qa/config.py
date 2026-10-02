@@ -4,11 +4,17 @@ Constants for the Document Q&A pipeline.
 """
 
 QA_MODEL = "qwen2.5:3b"
-PIPELINE_VERSION = "qa-v1"
+PIPELINE_VERSION = "qa-v1.1"
 QA_DEBUG = False                      # keep run artifacts after success if True
 
 NUM_CTX_UNDERSTAND, NUM_CTX_ANSWER = 1024, 3072      # Q4 and Q5 share NUM_CTX_ANSWER
 NUM_PREDICT_UNDERSTAND, NUM_PREDICT_ANSWER, NUM_PREDICT_VERIFY = 220, 360, 12
+NUM_PREDICT_CONSOLIDATE = 260
+CONSOLIDATE_MAX_CLAIMS = 5
+CONSOLIDATE_MAX_POINTS = 4
+CONSOLIDATE_SUPPORT_MIN = 0.7      # stricter than SUPPORT_MIN: this stage only rewrites verified material
+DEDUPE_JACCARD = 0.8
+CONSOLIDATE_MAX_WORDS = 120
 
 DENSE_TOPK, BM25_TOPK, FUSED_CAND, SUBQ_TOPK = 30, 30, 24, 12
 RRF_K = 60

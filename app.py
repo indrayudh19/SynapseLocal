@@ -20,6 +20,13 @@ from representation import extract_concepts as rep_extract
 from representation import build_concept_graph as rep_graph_build
 from representation import map_layout as rep_map_layout
 
+
+def _escape_md(text: str) -> str:
+    """Escape markdown special characters in document-derived text."""
+    if not text:
+        return ""
+    return str(text).replace("*", "\\*").replace("_", "\\_").replace("`", "\\`")
+
 # ---------------------------------------------------------
 # Page Configuration
 # ---------------------------------------------------------
@@ -447,30 +454,67 @@ with tab_chat:
                 else:
                     claims = rec.get("claims", [])
                     partial = rec.get("partial", False)
+                    consolidated = rec.get("consolidated")
 
-                    for cl in claims:
-                        kind = cl.get("kind", "paraphrase")
-                        support_ids = cl.get("support", [])
-                        cite_str = " ".join(f"[{sid_ref.split('.')[0]}]" for sid_ref in support_ids)
+                    if consolidated:
+                        lead = consolidated.get("lead", {})
+                        points = consolidated.get("points", [])
+                        style = consolidated.get("style", "paragraph")
+                        fallback = consolidated.get("fallback", False)
 
-                        st.markdown(f"{cl.get('text', '')} {cite_str}")
+                        lead_markers = "".join(f"[{m}]" for m in lead.get("markers", []))
+                        lead_text = _escape_md(lead.get("text", "")) + (f" {lead_markers}" if lead_markers else "")
 
-                        if kind == "quote":
-                            badge = "Quoted from source"
-                        elif kind == "extractive_fallback":
-                            badge = "Extractive"
-                        elif cl.get("verified"):
-                            badge = "Synthesized (verified)"
-                        elif kind == "weak":
-                            badge = "Synthesized (weak support)"
+                        if style == "bullets":
+                            st.markdown(lead_text)
+                            for pt in points:
+                                pt_markers = "".join(f"[{m}]" for m in pt.get("markers", []))
+                                pt_text = _escape_md(pt.get("text", "")) + (f" {pt_markers}" if pt_markers else "")
+                                st.markdown(f"- {pt_text}")
+                        elif style == "steps":
+                            st.markdown(lead_text)
+                            for idx, pt in enumerate(points, start=1):
+                                pt_markers = "".join(f"[{m}]" for m in pt.get("markers", []))
+                                pt_text = _escape_md(pt.get("text", "")) + (f" {pt_markers}" if pt_markers else "")
+                                st.markdown(f"{idx}. {pt_text}")
+                        else:  # paragraph
+                            para_parts = [lead_text]
+                            for pt in points:
+                                pt_markers = "".join(f"[{m}]" for m in pt.get("markers", []))
+                                pt_text = _escape_md(pt.get("text", "")) + (f" {pt_markers}" if pt_markers else "")
+                                para_parts.append(pt_text)
+                            st.markdown(" ".join(para_parts))
+
+                        if fallback:
+                            st.caption("Consolidation unavailable; showing extracted statements.")
                         else:
-                            badge = "Synthesized"
-                        st.caption(badge)
+                            st.caption(f"Consolidated from {len(claims)} extracted statements. Open Sources for the original text.")
+
+                    else:
+                        # Older records without consolidated
+                        for cl in claims:
+                            kind = cl.get("kind", "paraphrase")
+                            support_ids = cl.get("support", [])
+                            cite_str = " ".join(f"[{sid_ref.split('.')[0]}]" for sid_ref in support_ids)
+
+                            st.markdown(f"{_escape_md(cl.get('text', ''))} {cite_str}")
+
+                            if kind == "quote":
+                                badge = "Quoted from source"
+                            elif kind == "extractive_fallback":
+                                badge = "Extractive"
+                            elif cl.get("verified"):
+                                badge = "Synthesized (verified)"
+                            elif kind == "weak":
+                                badge = "Synthesized (weak support)"
+                            else:
+                                badge = "Synthesized"
+                            st.caption(badge)
 
                     if partial:
                         st.caption("This answer is based on the top passages only.")
 
-                    # Sources expander
+                    # Expander 1: Sources (unchanged)
                     evidence = rec.get("evidence", [])
                     if evidence:
                         with st.expander("Sources", expanded=False):
@@ -486,14 +530,51 @@ with tab_chat:
                                 for s in ev.get("window", []):
                                     s_id = s.get("sid", "")
                                     s_text = s.get("text", "")
-                                    # Escape markdown special chars
-                                    s_text_escaped = s_text.replace("*", "\\*").replace("_", "\\_").replace("`", "\\`")
+                                    s_text_escaped = _escape_md(s_text)
                                     if s_id in cited_sids:
                                         st.markdown(f"**{s_id}** **{s_text_escaped}**")
                                     else:
                                         st.markdown(f"{s_id} {s_text_escaped}")
 
-                    # How this was answered expander
+                    # Expander 2: Extracted statements (before consolidation)
+                    if consolidated and claims:
+                        with st.expander("Extracted statements (before consolidation)", expanded=False):
+                            for cl in claims:
+                                kind = cl.get("kind", "paraphrase")
+                                support_ids = cl.get("support", [])
+                                cite_str = " ".join(f"[{sid_ref.split('.')[0]}]" for sid_ref in support_ids)
+
+                                st.markdown(f"{_escape_md(cl.get('text', ''))} {cite_str}")
+
+                                if kind == "quote":
+                                    badge = "Quoted from source"
+                                elif kind == "extractive_fallback":
+                                    badge = "Extractive"
+                                elif cl.get("verified"):
+                                    badge = "Synthesized (verified)"
+                                elif kind == "weak":
+                                    badge = "Synthesized (weak support)"
+                                else:
+                                    badge = "Synthesized"
+                                st.caption(badge)
+
+                            # Excluded or dropped claims if any
+                            dropped_or_excluded = []
+                            for ex in consolidated.get("excluded", []):
+                                dropped_or_excluded.append((ex.get("text", ""), "Excluded during consolidation"))
+                            for dr in consolidated.get("dropped", []):
+                                dropped_or_excluded.append((dr.get("text", ""), f"Dropped: {dr.get('reason', 'verification')}"))
+                            for d_cl in rec.get("dropped_claims", []):
+                                dropped_or_excluded.append((d_cl.get("text", ""), "Dropped during verification (unsupported)"))
+
+                            if dropped_or_excluded:
+                                st.markdown("**Dropped or excluded statements:**")
+                                for txt, reason in dropped_or_excluded:
+                                    if txt:
+                                        st.markdown(f"- {_escape_md(txt)}")
+                                        st.caption(reason)
+
+                    # Expander 3: How this was answered (unchanged + consolidation time)
                     understanding = rec.get("understanding", {})
                     timings = rec.get("timings", {})
                     versions = rec.get("versions", {})

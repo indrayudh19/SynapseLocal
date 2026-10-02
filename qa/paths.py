@@ -57,6 +57,9 @@ def answer_path(session_id: str, run_id: str) -> str:
 def verified_path(session_id: str, run_id: str) -> str:
     return os.path.join(run_dir(session_id, run_id), "verified.json")
 
+def consolidated_path(session_id: str, run_id: str) -> str:
+    return os.path.join(run_dir(session_id, run_id), "consolidated.json")
+
 def error_path(session_id: str, run_id: str) -> str:
     return os.path.join(run_dir(session_id, run_id), "error.json")
 

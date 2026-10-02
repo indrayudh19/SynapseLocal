@@ -169,12 +169,12 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
                 reranked_data = json.load(f)
 
             if reranked_data.get("status") == "not_found":
-                # Skip Q4 and Q5
+                # Skip Q4, Q5, Q6
                 record = _build_record(
                     run_id, question, understanding, reranked_data,
                     {"status": "not_found", "claims": [], "partial": False,
                      "closest": reranked_data.get("closest", []), "dropped_claims": []},
-                    timings, chunk_files,
+                    None, timings, chunk_files,
                 )
                 store.append_answer(session_id, record)
                 _cleanup_run(session_id, run_id)
@@ -194,25 +194,31 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
             verified = verify_run(session_id, run_id)
             timings["verify_s"] = round(time.time() - t0, 1)
 
+            # ── Q6: Consolidate (in process) ─────────────────
+            _status("Consolidating the answer")
+            t0 = time.time()
+            from qa.consolidate import run as consolidate_run
+            consolidated = consolidate_run(session_id, run_id)
+            timings["consolidate_s"] = round(time.time() - t0, 1)
+
             # ── Build final record ───────────────────────────
             record = _build_record(
                 run_id, question, understanding, reranked_data,
-                verified, timings, chunk_files,
+                verified, consolidated, timings, chunk_files,
             )
             store.append_answer(session_id, record)
             _cleanup_run(session_id, run_id)
             return record
 
         except Exception as e:
-            # Unload model on error
-            try:
-                ollama.generate(model=QA_MODEL, prompt="", keep_alive=0)
-            except Exception:
-                pass
             _cleanup_run(session_id, run_id)
             return {"status": "error", "message": f"QA failed: {str(e)}"}
 
         finally:
+            try:
+                ollama.generate(model=QA_MODEL, prompt="", keep_alive=0)
+            except Exception:
+                pass
             locks.release_session_lock(session_id)
 
     finally:
@@ -220,8 +226,8 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
 
 
 def _build_record(run_id: str, question: str, understanding: dict,
-                  reranked: dict, verified: dict, timings: dict,
-                  chunk_files: set[str]) -> dict:
+                  reranked: dict, verified: dict, consolidated: dict | None,
+                  timings: dict, chunk_files: set[str]) -> dict:
     """Build the final answer record for answers.jsonl."""
     ts = datetime.now().isoformat(timespec="seconds")
     answer_id = "a_" + datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -243,7 +249,7 @@ def _build_record(run_id: str, question: str, understanding: dict,
             "rrf": p.get("rrf", 0),
         })
 
-    return {
+    rec = {
         "id": answer_id,
         "ts": ts,
         "question": question,
@@ -267,6 +273,9 @@ def _build_record(run_id: str, question: str, understanding: dict,
             "pipeline": PIPELINE_VERSION,
         },
     }
+    if consolidated is not None:
+        rec["consolidated"] = consolidated
+    return rec
 
 
 def _cleanup_run(session_id: str, run_id: str):

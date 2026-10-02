@@ -28,3 +28,13 @@ class Claim(BaseModel):
 class Answer(BaseModel):
     found: bool
     claims: list[Claim] = Field(max_length=5)
+
+
+class Statement(BaseModel):
+    text: str = Field(max_length=300)
+    cites: list[str] = Field(min_length=1, max_length=4)    # claim ids "c1".."c5"
+
+
+class Consolidated(BaseModel):
+    lead: Statement
+    points: list[Statement] = Field(max_length=4)
