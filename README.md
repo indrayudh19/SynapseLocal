@@ -4,7 +4,7 @@
 
 SynapseLocal ingests your own documents (PDF, PPTX, TXT, Markdown), builds a searchable knowledge base, answers questions with cited sources using a locally hosted Qwen model, and extracts a structured map of the concepts those documents contain. Everything runs on your machine through Ollama and local libraries. No document, embedding, or query leaves the device.
 
-![alt text]({4B0B724E-7B91-46B3-8CB9-5AEB0FF74805}.png)
+![alt text](img_for_readme/{4B0B724E-7B91-46B3-8CB9-5AEB0FF74805}.png)
 
 *The SynapseLocal interface: session controls and staged services on the left, chat and concept map views on the right.*
 
@@ -219,7 +219,7 @@ The interface is a Streamlit application with a dark theme. The sidebar controls
 
 ### 5.2 Local RAG Chat
 
-![alt text]({F45938C3-F7A9-49BB-9D8D-F0780D002AF7}.png)
+![alt text](img_for_readme/{F45938C3-F7A9-49BB-9D8D-F0780D002AF7}.png)
 *Chat view with an expanded citation panel.*
 
 Ask questions about the documents in the active session. Each answer includes an expandable **Source Citations** panel listing, for every supporting passage, the document, chunk identifier, heading, retrieval source, and relevance score. The panel makes it possible to verify any statement against its origin.
@@ -230,7 +230,7 @@ The Concept Clusters tab turns the document set into a navigable map of ideas. I
 
 #### Pipeline controls
 
-![alt text]({2366AF11-B989-4268-A54C-4D1A20F98D04}.png)
+![alt text](img_for_readme/{2366AF11-B989-4268-A54C-4D1A20F98D04}.png)
 *The status row and the four pipeline steps.*
 
 A status row shows which stages are ready. Each step has its own button and is enabled only when its input exists.
@@ -246,7 +246,7 @@ If the documents do not contain enough structure (too few concepts or relations)
 
 #### The interactive map
 
-![alt text]({2E1BC06C-3BF1-4397-A0BA-785F3DA89EDB}.png)
+![alt text](img_for_readme/{2E1BC06C-3BF1-4397-A0BA-785F3DA89EDB}.png)
 *Overview: clusters appear as colored bubbles with hub titles. Distance reflects relatedness.*
 
 The map reveals detail progressively as you zoom, and each cluster decides its own level of detail from its on-screen size.
@@ -257,12 +257,12 @@ The map reveals detail progressively as you zoom, and each cluster decides its o
 | Expanded | Hub circle, member concepts, labels for the most important members, and bridge connections |
 | Detail | All member labels that fit, relation labels on links, and full hover information |
 
-![alt text]({BE672D0A-004D-4395-BAB7-B0FDE32D1B5D}.png)
+![alt text](img_for_readme/{BE672D0A-004D-4395-BAB7-B0FDE32D1B5D}.png)
 *Expanded cluster: members arranged around the hub, sized by importance.*
 
 **Visual encoding**
 
-![alt text]({23B2B2A9-E609-4251-8952-6053228E024C}.png)
+![alt text](img_for_readme/{23B2B2A9-E609-4251-8952-6053228E024C}.png)
 
 - Color identifies the cluster.
 - Member size reflects importance (PageRank).
@@ -285,7 +285,7 @@ The map can be downloaded as a standalone HTML file and opened full screen in an
 
 #### Metrics and tables
 
-![alt text]({A98B8F70-BDA1-4B7B-AF3E-73C7D2B67501}.png)
+![alt text](img_for_readme/{A98B8F70-BDA1-4B7B-AF3E-73C7D2B67501}.png)
 *Metric badges, cluster breakdown, and bridge concepts.*
 
 - **Metric badges:** concepts, relations, clusters, modularity, silhouette, components, and bridges (see [Quality metrics](#49-quality-metrics)).
