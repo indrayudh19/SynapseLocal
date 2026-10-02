@@ -7,7 +7,10 @@ from backend.session_manager import (
     create_session, delete_session, list_sessions,
     save_uploaded_files, get_session_dir,
 )
-from backend.pipeline import hybrid_retrieve_and_answer
+from qa.orchestrator import ask as qa_ask
+from qa.store import load_answers as qa_load_answers
+from qa import locks as qa_locks
+from qa import paths as qa_paths
 from backend.vector_store import LocalVectorStore
 from backend.local_llm import get_embedding_dim
 from representation import paths as rep_paths
@@ -232,6 +235,10 @@ with st.sidebar:
                 st.session_state.messages = []
                 st.session_state.pipeline_stats = None
                 st.session_state.is_processed = False
+                # Clear QA session state
+                for k in list(st.session_state.keys()):
+                    if k.startswith("qa_"):
+                        del st.session_state[k]
                 st.rerun()
 
     if session_options:
@@ -252,6 +259,10 @@ with st.sidebar:
             meta = sessions.get(selected_sid, {})
             st.session_state.is_processed = meta.get("is_processed", False)
             st.session_state.pipeline_stats = None
+            # Clear QA session state
+            for k in list(st.session_state.keys()):
+                if k.startswith("qa_"):
+                    del st.session_state[k]
             st.rerun()
     else:
         st.info("No sessions. Click 'New Session' to start.")
@@ -388,99 +399,166 @@ tab_chat, tab_cluster = st.tabs([
 
 
 # ---------------------------------------------------------
-# Tab 1: Local RAG Chat
+# Tab 1: Local RAG Chat (Document Q&A)
 # ---------------------------------------------------------
 with tab_chat:
-    if not st.session_state.session_id:
+    st.caption("Answers are drawn from your documents. Each question is answered independently. Model: qwen2.5:3b.")
+
+    sid = st.session_state.session_id
+    if not sid:
         st.info("Create a session from the sidebar to begin.")
-    elif not st.session_state.is_processed:
-        st.info("Upload documents and run the pipeline to enable chat.")
-        # Still show chat input (disabled feel) for UI completeness
-        if not st.session_state.messages:
-            st.session_state.messages = [{
-                "role": "assistant",
-                "content": "SynapseLocal engine standing by. Upload documents and process them to activate hybrid retrieval.",
-                "citations": []
-            }]
-    
-    # Display chat history
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
-            if message.get("citations"):
-                with st.expander("Source Citations & Graph Nodes", expanded=False):
-                    for idx, cit in enumerate(message["citations"]):
-                        source_type = cit.get("source", "vector")
-                        score_text = f" | Score: {cit['score']}" if cit.get("score") else ""
-                        st.markdown(
-                            f"""
-                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
-                                        padding: 6px 0; border-bottom: 1px solid #1f1f2e;">
-                                <span style="color: #00ff66;">[{idx+1}] {cit.get('doc', 'unknown')}</span>
-                                &nbsp;|&nbsp;
-                                <span style="color: #a855f7;">{cit.get('chunk_id', '')}</span>
-                                &nbsp;|&nbsp;
-                                <span style="color: #c084fc;">{cit.get('heading', '')}</span>
-                                &nbsp;|&nbsp;
-                                <span style="color: #9ca3af;">[{source_type}]{score_text}</span>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+    else:
+        # Precondition checks
+        has_index = os.path.exists(qa_paths.faiss_index_path(sid))
+        rep_running = qa_locks.is_representation_running(sid)
+        input_disabled = (not has_index) or rep_running
 
-    # Chat input
-    user_query = st.chat_input("Enter your query for local retrieval...")
-    if user_query:
-        st.session_state.messages.append({"role": "user", "content": user_query, "citations": []})
-        with st.chat_message("user"):
-            st.write(user_query)
+        if not has_index:
+            st.info("No index found. Run **Embed & Store** first to enable Q&A.")
+        if rep_running:
+            st.warning("A concept map stage is running. Q&A is disabled until it finishes.")
 
-        if st.session_state.is_processed and st.session_state.session_id:
-            # Real hybrid retrieval
-            with st.spinner("Retrieving context and generating response..."):
-                try:
-                    result = hybrid_retrieve_and_answer(
-                        session_id=st.session_state.session_id,
-                        query=user_query,
-                        model=selected_model,
-                        embed_model=embed_model_name,
-                    )
-                    answer = result["answer"]
-                    citations = result["citations"]
-                except Exception as e:
-                    answer = f"Error during retrieval: {str(e)}"
-                    citations = []
-        else:
-            answer = "Pipeline not initialized. Upload and process documents first."
-            citations = []
+        # Load answer history from disk
+        answers_history = qa_load_answers(sid)
 
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": answer,
-            "citations": citations
-        })
-        with st.chat_message("assistant"):
-            st.write(answer)
-            if citations:
-                with st.expander("Source Citations & Graph Nodes", expanded=False):
-                    for idx, cit in enumerate(citations):
-                        source_type = cit.get("source", "vector")
-                        score_text = f" | Score: {cit['score']}" if cit.get("score") else ""
-                        st.markdown(
-                            f"""
-                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
-                                        padding: 6px 0; border-bottom: 1px solid #1f1f2e;">
-                                <span style="color: #00ff66;">[{idx+1}] {cit.get('doc', 'unknown')}</span>
-                                &nbsp;|&nbsp;
-                                <span style="color: #a855f7;">{cit.get('chunk_id', '')}</span>
-                                &nbsp;|&nbsp;
-                                <span style="color: #c084fc;">{cit.get('heading', '')}</span>
-                                &nbsp;|&nbsp;
-                                <span style="color: #9ca3af;">[{source_type}]{score_text}</span>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+        # Display previous Q&A pairs
+        for rec in answers_history:
+            # User question
+            with st.chat_message("user"):
+                st.write(rec.get("question", ""))
+
+            # Assistant answer
+            with st.chat_message("assistant"):
+                status = rec.get("status", "answered")
+
+                if status == "not_found":
+                    st.write("The documents do not appear to contain an answer to this question.")
+                    closest = rec.get("claims", [])  # might be in closest
+                    closest_evidence = rec.get("evidence", [])
+                    if closest_evidence:
+                        with st.expander("Closest passages", expanded=False):
+                            for ev in closest_evidence[:3]:
+                                _sf = ev.get("source_file", "")
+                                _pg = ev.get("page_or_slide", "")
+                                _hd = ev.get("heading", "")
+                                st.markdown(f"**[{ev.get('pid', '?')}]** {_sf}, p.{_pg}, \"{_hd}\"")
+                                for s in ev.get("window", [])[:3]:
+                                    st.text(s.get("text", ""))
+                else:
+                    claims = rec.get("claims", [])
+                    partial = rec.get("partial", False)
+
+                    for cl in claims:
+                        kind = cl.get("kind", "paraphrase")
+                        support_ids = cl.get("support", [])
+                        cite_str = " ".join(f"[{sid_ref.split('.')[0]}]" for sid_ref in support_ids)
+
+                        st.markdown(f"{cl.get('text', '')} {cite_str}")
+
+                        if kind == "quote":
+                            badge = "Quoted from source"
+                        elif kind == "extractive_fallback":
+                            badge = "Extractive"
+                        elif cl.get("verified"):
+                            badge = "Synthesized (verified)"
+                        elif kind == "weak":
+                            badge = "Synthesized (weak support)"
+                        else:
+                            badge = "Synthesized"
+                        st.caption(badge)
+
+                    if partial:
+                        st.caption("This answer is based on the top passages only.")
+
+                    # Sources expander
+                    evidence = rec.get("evidence", [])
+                    if evidence:
+                        with st.expander("Sources", expanded=False):
+                            cited_sids = set()
+                            for cl in claims:
+                                cited_sids.update(cl.get("support", []))
+
+                            for ev in evidence:
+                                _sf = ev.get("source_file", "")
+                                _pg = ev.get("page_or_slide", "")
+                                _hd = ev.get("heading", "")
+                                st.markdown(f"**[{ev.get('pid', '?')}]** {_sf}, p.{_pg}, \"{_hd}\"")
+                                for s in ev.get("window", []):
+                                    s_id = s.get("sid", "")
+                                    s_text = s.get("text", "")
+                                    # Escape markdown special chars
+                                    s_text_escaped = s_text.replace("*", "\\*").replace("_", "\\_").replace("`", "\\`")
+                                    if s_id in cited_sids:
+                                        st.markdown(f"**{s_id}** **{s_text_escaped}**")
+                                    else:
+                                        st.markdown(f"{s_id} {s_text_escaped}")
+
+                    # How this was answered expander
+                    understanding = rec.get("understanding", {})
+                    timings = rec.get("timings", {})
+                    versions = rec.get("versions", {})
+                    with st.expander("How this was answered", expanded=False):
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            st.markdown(f"**Intent:** {understanding.get('intent', '?')}")
+                            st.markdown(f"**Answer type:** {understanding.get('answer_type', '?')}")
+                            st.markdown(f"**Key terms:** {', '.join(understanding.get('key_terms', []))}")
+                            queries = understanding.get('queries', [])
+                            if queries:
+                                st.markdown(f"**Query rewrites:** {'; '.join(queries[1:]) if len(queries) > 1 else 'none'}")
+                            subs = understanding.get('sub_questions', [])
+                            if subs:
+                                st.markdown(f"**Sub-questions:** {'; '.join(subs)}")
+                        with col_b:
+                            if evidence:
+                                for ev in evidence[:3]:
+                                    rerank_val = ev.get('rerank', '?')
+                                    rrf_val = ev.get('rrf', '?')
+                                    st.caption(f"Passage {ev.get('pid')}: rerank={rerank_val}, rrf={rrf_val}")
+                            timing_parts = [f"{k}: {v}s" for k, v in timings.items()]
+                            st.markdown(f"**Timings:** {', '.join(timing_parts)}")
+                            st.markdown(f"**Models:** {versions.get('qa_model', '?')} / {versions.get('embed_model', '?')} / {versions.get('reranker', '?')}")
+
+        # Chat input
+        user_query = st.chat_input(
+            "Ask a question about your documents...",
+            disabled=input_disabled,
+        )
+        if user_query and not input_disabled:
+            with st.chat_message("user"):
+                st.write(user_query)
+
+            with st.chat_message("assistant"):
+                with st.status("Answering", expanded=True) as status_widget:
+                    stage_times: list[str] = []
+                    import time as _time
+                    stage_info = {"start": _time.time()}
+
+                    def _on_status(label: str):
+                        elapsed = _time.time() - stage_info["start"]
+                        if stage_times:
+                            stage_times[-1] += f" ({elapsed:.1f}s)"
+                        stage_times.append(label)
+                        stage_info["start"] = _time.time()
+                        status_widget.update(label=label)
+
+                    try:
+                        result = qa_ask(sid, user_query, on_status=_on_status)
+                    except Exception as e:
+                        result = {"status": "error", "message": str(e)}
+
+                    # Finalize last stage timing
+                    elapsed = _time.time() - stage_info["start"]
+                    if stage_times:
+                        stage_times[-1] += f" ({elapsed:.1f}s)"
+
+                    status_widget.update(label="Done", state="complete", expanded=False)
+
+                if result.get("status") == "error":
+                    st.error(result.get("message", "An error occurred."))
+                else:
+                    # Re-render will pick up the new answer from disk
+                    st.rerun()
 
 
 # ---------------------------------------------------------
