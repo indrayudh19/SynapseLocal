@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Concept Map</title>
+  <style>
+    :root {
+      --bg: #05060a;
+      --card-bg: rgba(13, 17, 26, 0.88);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text-main: #e6e6ef;
+      --text-muted: #8b949e;
+      --accent: #8b5cf6;
+      --gold: #f2c14e;
+      --inv: 1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: Consolas, Menlo, Monaco, "Courier New", monospace, ui-monospace, sans-serif;
+    }
+
+    #map-svg {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      touch-action: none;
+      cursor: grab;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #map-svg:active {
+      cursor: grabbing;
+    }
+
+    /* SVG elements styling */
+    .cluster-halo {
+      cursor: pointer;
+      vector-effect: non-scaling-stroke;
+      transition: fill-opacity 150ms ease-out, stroke-opacity 150ms ease-out;
+    }
+
+    .hub-circle {
+      cursor: pointer;
+      vector-effect: non-scaling-stroke;
+      transition: opacity 150ms ease-out, transform 150ms ease-out;
+    }
+
+    .member-dot {
+      cursor: pointer;
+      vector-effect: non-scaling-stroke;
+      transition: opacity 150ms ease-out, r 150ms ease-out;
+    }
+
+    .member-dot:hover, .hub-circle:hover {
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7));
+    }
+
+    .spoke-line {
+      vector-effect: non-scaling-stroke;
+      stroke-width: 1px;
+      pointer-events: none;
+      transition: opacity 150ms ease-out;
+    }
+
+    .cluster-link {
+      vector-effect: non-scaling-stroke;
+      stroke: #8b5cf6;
+      stroke-linecap: round;
+      pointer-events: stroke;
+      cursor: pointer;
+      transition: opacity 150ms ease-out, stroke-width 150ms ease-out;
+    }
+
+    .cluster-link.tree {
+      stroke-opacity: 0.75;
+    }
+
+    .cluster-link:not(.tree) {
+      stroke-opacity: 0.35;
+      stroke-dasharray: 6 4;
+    }
+
+    .bridge-line {
+      vector-effect: non-scaling-stroke;
+      stroke: #9ca3af;
+      stroke-width: 1.2px;
+      stroke-dasharray: 4 4;
+      stroke-opacity: 0.6;
+      pointer-events: none;
+      transition: opacity 150ms ease-out;
+    }
+
+    /* Labels counter-scaled */
+    .map-label {
+      pointer-events: none;
+      fill: var(--text-main);
+      font-weight: 500;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px #000;
+    }
+
+    .label-hub-collapsed {
+      font-size: calc(18px * var(--inv));
+      font-weight: 700;
+      text-anchor: middle;
+      dominant-baseline: central;
+      transition: opacity 150ms ease-out;
+    }
+
+    .label-hub-expanded {
+      font-size: calc(14px * var(--inv));
+      font-weight: 600;
+      dominant-baseline: central;
+      transition: opacity 150ms ease-out;
+    }
+
+    .label-member {
+      font-size: calc(12px * var(--inv));
+      dominant-baseline: central;
+      transition: opacity 150ms ease-out;
+    }
+
+    .label-link {
+      font-size: calc(11px * var(--inv));
+      fill: #c4b5fd;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    /* Semantic Zoom LOD Classes */
+    .cluster.collapsed .cluster-halo {
+      fill-opacity: 0.16;
+      stroke-opacity: 0.45;
+    }
+    .cluster.collapsed .hub-circle,
+    .cluster.collapsed .spoke-line,
+    .cluster.collapsed .member-dot,
+    .cluster.collapsed .bridge-line,
+    .cluster.collapsed .label-hub-expanded,
+    .cluster.collapsed .label-member {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .cluster.collapsed .label-hub-collapsed {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .cluster.expanded .cluster-halo {
+      fill-opacity: 0.07;
+      stroke-opacity: 0.25;
+    }
+    .cluster.expanded .label-hub-collapsed {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .cluster.expanded .hub-circle,
+    .cluster.expanded .label-hub-expanded,
+    .cluster.expanded .member-dot,
+    .cluster.expanded .bridge-line {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .cluster.expanded .spoke-line.direct {
+      opacity: 0.35;
+    }
+    .cluster.expanded .spoke-line:not(.direct) {
+      opacity: 0;
+    }
+
+    .cluster.detail .cluster-halo {
+      fill-opacity: 0.04;
+      stroke-opacity: 0.18;
+    }
+    .cluster.detail .label-hub-collapsed {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .cluster.detail .hub-circle,
+    .cluster.detail .label-hub-expanded,
+    .cluster.detail .member-dot,
+    .cluster.detail .bridge-line,
+    .cluster.detail .spoke-line {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .cluster.detail .spoke-line.direct {
+      opacity: 0.45;
+    }
+    .cluster.detail .spoke-line:not(.direct) {
+      opacity: 0.25;
+    }
+
+    /* Selection dimming */
+    #viewport.has-selection .cluster-halo,
+    #viewport.has-selection .cluster-link,
+    #viewport.has-selection .hub-circle,
+    #viewport.has-selection .member-dot,
+    #viewport.has-selection .spoke-line,
+    #viewport.has-selection .bridge-line,
+    #viewport.has-selection .map-label {
+      opacity: 0.12 !important;
+    }
+
+    #viewport.has-selection .is-selected,
+    #viewport.has-selection .is-connected {
+      opacity: 1.0 !important;
+    }
+
+    .is-selected {
+      stroke: #ffffff !important;
+      stroke-width: 3px !important;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)) !important;
+    }
+
+    /* Overlays */
+    .overlay-panel {
+      position: absolute;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 10;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Info Chip */
+    #info-chip {
+      top: 14px;
+      left: 14px;
+      padding: 10px 14px;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    #info-chip .title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    #info-chip .stats {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Search Box */
+    #search-box {
+      top: 14px;
+      right: 14px;
+      width: 260px;
+    }
+
+    #search-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 9px 12px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    #search-dropdown {
+      display: none;
+      border-top: 1px solid var(--card-border);
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .search-item {
+      padding: 7px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .search-item:hover, .search-item.active {
+      background: rgba(139, 92, 246, 0.25);
+    }
+
+    .search-item .kind-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+    }
+
+    /* Zoom Controls */
+    #zoom-controls {
+      bottom: 16px;
+      left: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 4px;
+    }
+
+    .ctrl-btn {
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 120ms ease;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Minimap */
+    #minimap {
+      bottom: 16px;
+      right: 14px;
+      width: 160px;
+      height: 110px;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    #minimap-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #minimap-rect {
+      fill: rgba(139, 92, 246, 0.15);
+      stroke: #8b5cf6;
+      stroke-width: 1.5px;
+      vector-effect: non-scaling-stroke;
+    }
+
+    /* Detail Panel */
+    #detail-panel {
+      top: 14px;
+      right: 14px;
+      width: 320px;
+      max-height: calc(100vh - 28px);
+      overflow-y: auto;
+      padding: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 20;
+    }
+
+    #detail-panel .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 8px;
+    }
+
+    #detail-panel .node-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      word-break: break-word;
+    }
+
+    #detail-panel .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    #detail-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .detail-section {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    .detail-section .sec-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .detail-sentence {
+      font-style: italic;
+      line-height: 1.4;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 8px;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .source-mix-bar {
+      display: flex;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .source-mix-seg {
+      height: 100%;
+    }
+
+    .rel-item {
+      padding: 5px 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .rel-header {
+      font-weight: 600;
+      color: #c4b5fd;
+    }
+
+    .rel-evidence {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Tooltip */
+    #tooltip {
+      position: absolute;
+      padding: 5px 9px;
+      font-size: 11px;
+      background: rgba(10, 13, 20, 0.94);
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      pointer-events: none;
+      display: none;
+      z-index: 30;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    /* Legend */
+    #legend-toggle {
+      bottom: 16px;
+      left: 54px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    #legend-panel {
+      bottom: 54px;
+      left: 14px;
+      width: 240px;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main Map SVG -->
+  <svg id="map-svg" xmlns="http://www.w3.org/2000/svg">
+    <g id="viewport">
+      <g id="g-halos"></g>
+      <g id="g-links"></g>
+      <g id="g-spokes"></g>
+      <g id="g-bridges"></g>
+      <g id="g-members"></g>
+      <g id="g-hubs"></g>
+      <g id="g-labels"></g>
+    </g>
+  </svg>
+
+  <!-- Overlays -->
+  <div id="info-chip" class="overlay-panel">
+    <div class="title" id="info-title">Concept Map</div>
+    <div class="stats" id="info-stats"></div>
+  </div>
+
+  <div id="search-box" class="overlay-panel">
+    <input type="text" id="search-input" placeholder="Search concepts or clusters..." autocomplete="off" spellcheck="false">
+    <div id="search-dropdown"></div>
+  </div>
+
+  <div id="zoom-controls" class="overlay-panel">
+    <button class="ctrl-btn" id="btn-zoom-in" title="Zoom In (+)">+</button>
+    <button class="ctrl-btn" id="btn-zoom-out" title="Zoom Out (-)">−</button>
+    <button class="ctrl-btn" id="btn-zoom-reset" title="Reset View (0)" style="font-size: 12px;">⟲</button>
+  </div>
+
+  <div id="legend-toggle" class="overlay-panel" title="Legend">?</div>
+  <div id="legend-panel" class="overlay-panel">
+    <div style="font-weight: 700; border-bottom: 1px solid var(--card-border); padding-bottom: 4px;">Legend</div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background: rgba(139,92,246,0.3); border: 1.5px solid #8b5cf6;"></div>
+      <span>Cluster Halo / Hub</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="border: 2px solid var(--gold); background: #3b8fd9;"></div>
+      <span>Multi-source Concept (Gold ring)</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background: #3b8fd9; opacity: 0.5;"></div>
+      <span>Single-source Concept</span>
+    </div>
+    <div class="legend-row">
+      <span style="font-weight: bold; color: #8b5cf6; width: 14px; text-align: center;">―</span>
+      <span>Cluster Link (Tree / Affinity)</span>
+    </div>
+    <div class="legend-row">
+      <span style="font-weight: bold; color: #9ca3af; width: 14px; text-align: center;">┄</span>
+      <span>Bridge Concept to Partner</span>
+    </div>
+  </div>
+
+  <div id="minimap" class="overlay-panel">
+    <svg id="minimap-svg">
+      <g id="minimap-clusters"></g>
+      <rect id="minimap-rect"></rect>
+    </svg>
+  </div>
+
+  <div id="detail-panel" class="overlay-panel">
+    <div class="header">
+      <div class="node-title" id="panel-title">Node Title</div>
+      <button class="close-btn" id="panel-close-btn">&times;</button>
+    </div>
+    <div id="panel-body" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <!-- Inline Map Data -->
+  <script id="map-data" type="application/json">{"meta":{"title":"Concept Map","metrics":{"clusters":10,"concepts":107,"modularity":0.674,"silhouette":0.0},"globalTopics":["microservice"],"expandPx":240,"detailPx":640,"viewBox":[-1557.2,-921.8,3131.7,1753.7]},"clusters":[{"id":0,"title":"inter-service communication","x":-1183.8,"y":-100.3,"hubR":47.4,"halo":173.4,"color":"#e8703a","n":6,"drawn":5,"keywords":["HTTP/REST","RabbitMQ","Kafka","message broker","GraphQL"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":1,"title":"container","x":-24.3,"y":-544.8,"hubR":51.0,"halo":177.0,"color":"#3b8fd9","n":9,"drawn":8,"keywords":["container networking","container registry","network interface","memory limits","container image"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":2,"title":"event","x":63.4,"y":-51.6,"hubR":49.9,"halo":175.9,"color":"#4cae4f","n":8,"drawn":7,"keywords":["gRPC","service discovery","REST API","SQS","NATS"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":3,"title":"bounded context","x":1189.7,"y":214.9,"hubR":58.7,"halo":184.7,"color":"#d94b4b","n":18,"drawn":17,"keywords":["Domain-Driven Design","business concept","communication","term","rule"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":4,"title":"business domain","x":-776.4,"y":157.1,"hubR":42.5,"halo":168.5,"color":"#9b6fd1","n":3,"drawn":2,"keywords":["e-commerce","Entity"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":5,"title":"Service Mesh","x":453.0,"y":-342.6,"hubR":44.4,"halo":170.4,"color":"#e0a458","n":4,"drawn":3,"keywords":["Ingress Controller","Linkerd","Istio"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":6,"title":"microservice","x":-277.6,"y":389.9,"hubR":64.0,"halo":242.0,"color":"#8c6d62","n":26,"drawn":25,"keywords":["User Service","Payment Service","monolithic architecture","Inventory service","banking"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":7,"title":"software architectural style","x":699.7,"y":84.1,"hubR":56.4,"halo":182.4,"color":"#5fb3b3","n":15,"drawn":14,"keywords":["microservices architecture","API Gateway","function as a service","function","technology choices"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":8,"title":"Kubernetes","x":-443.3,"y":-193.2,"hubR":48.7,"halo":174.7,"color":"#d96aa7","n":7,"drawn":6,"keywords":["service","Persistent Volume (PV)","StatefulSet","Persistent Volume Claim (PVC)","Pod"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}},{"id":9,"title":"Cloud Native Architecture","x":299.7,"y":386.5,"hubR":53.0,"halo":179.0,"color":"#a0b2d6","n":11,"drawn":10,"keywords":["API","Database","UI","food delivery app","presentation layer"],"sourceMix":{"U3 CNAforMP 21CSE477T.pdf":1.0}}],"members":[{"id":"c0m0","c":0,"name":"HTTP/REST","kind":"attribute","x":-1080.4,"y":-100.3,"r":8.1,"imp":0.34,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"•Each service is designed to perform a single business function  and communicates with \nother services using lightweight protocols (typically HTTP/REST or gRPC , sometimes \nmessaging queues like…","rels":[{"t":"microservice","r":"uses","ev":"•Each service is designed to perform a single business function  and communicates with \nother services using lightweight protocols (typically HTTP/REST or gRPC ","sup":1},{"t":"inter-service communication","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nTypes of Inter -Service Communication\na) Synchronous C","sup":1}]},{"id":"c0m1","c":0,"name":"RabbitMQ","kind":"example","x":-1151.9,"y":-2.0,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nTypes of Inter -Service Communication\na) Synchronous Communication\n•One service directly…","rels":[{"t":"inter-service communication","r":"example_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nTypes of Inter -Service Communication\na) Synchronous C","sup":1}]},{"id":"c0m2","c":0,"name":"Kafka","kind":"example","x":-1267.5,"y":-39.5,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nTypes of Inter -Service Communication\na) Synchronous Communication\n•One service directly…","rels":[{"t":"inter-service communication","r":"example_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nTypes of Inter -Service Communication\na) Synchronous C","sup":1}]},{"id":"c0m3","c":0,"name":"message broker","kind":"component","x":-1267.5,"y":-161.1,"r":7.2,"imp":0.24,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":3,"sent":"b) Asynchronous Communication\n•Services communicate via message brokers  (no waiting).","rels":[{"t":"inter-service communication","r":"uses","ev":"b) Asynchronous Communication\n•Services communicate via message brokers  (no waiting).","sup":1}]},{"id":"c0m4","c":0,"name":"GraphQL","kind":"attribute","x":-1151.9,"y":-198.7,"r":7.2,"imp":0.24,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":4,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nTypes of Inter -Service Communication\na) Synchronous Communication\n•One service directly…","rels":[{"t":"inter-service communication","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nTypes of Inter -Service Communication\na) Synchronous C","sup":1}]},{"id":"c1m0","c":1,"name":"container networking","kind":"practice","x":82.7,"y":-544.8,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"Container Networking - Container networking enables containers to communicate with \neach other and with external applications.","rels":[{"t":"container","r":"uses","ev":"Container Networking - Container networking enables containers to communicate with \neach other and with external applications.","sup":1},{"t":"container","r":"part_of","ev":"Container Networking - Container networking enables containers to communicate with \neach other and with external applications.","sup":1}]},{"id":"c1m1","c":1,"name":"container registry","kind":"component","x":51.4,"y":-469.2,"r":7.2,"imp":0.24,"mem":0.67,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"Container Registry - A repository where container images are stored and shared.","rels":[{"t":"container","r":"part_of","ev":"Container Registry - A repository where container images are stored and shared.","sup":1}]},{"id":"c1m2","c":1,"name":"network interface","kind":"attribute","x":-24.3,"y":-437.8,"r":7.2,"imp":0.24,"mem":0.33,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"•Every container gets its own network interface and IP .","rels":[{"t":"container","r":"uses","ev":"•Every container gets its own network interface and IP .","sup":1}]},{"id":"c1m3","c":1,"name":"memory limits","kind":"attribute","x":-99.9,"y":-469.2,"r":7.2,"imp":0.24,"mem":0.33,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":3,"sent":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","rels":[{"t":"container","r":"uses","ev":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","sup":1}]},{"id":"c1m4","c":1,"name":"container image","kind":"practice","x":-131.3,"y":-544.8,"r":7.2,"imp":0.24,"mem":0.33,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":4,"sent":"Container Image Optimization - Techniques used to build smaller, faster, and more secure \ncontainer images.","rels":[{"t":"container","r":"uses","ev":"Container Image Optimization - Techniques used to build smaller, faster, and more secure \ncontainer images.","sup":1}]},{"id":"c1m5","c":1,"name":"IP","kind":"attribute","x":-99.9,"y":-620.4,"r":7.2,"imp":0.24,"mem":0.33,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":5,"sent":"•Every container gets its own network interface and IP .","rels":[{"t":"container","r":"uses","ev":"•Every container gets its own network interface and IP .","sup":1}]},{"id":"c1m6","c":1,"name":"CPU limits","kind":"attribute","x":-24.3,"y":-651.8,"r":7.2,"imp":0.24,"mem":0.33,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":6,"sent":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","rels":[{"t":"container","r":"uses","ev":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","sup":1}]},{"id":"c1m7","c":1,"name":"Bridge","kind":"example","x":51.4,"y":-620.4,"r":7.2,"imp":0.24,"mem":0.33,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":7,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\nAdvanced Container Concepts\n1.","rels":[{"t":"container","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\nAdvanced Container Concepts\n1.","sup":1}]},{"id":"c2m0","c":2,"name":"gRPC","kind":"practice","x":169.3,"y":-51.6,"r":8.8,"imp":0.42,"mem":1.0,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"f) Inter -service Communication\n•Microservices communicate using:\nSynchronous : REST APIs / gRPC\nAsynchronous : Message brokers (Kafka, RabbitMQ).","rels":[{"t":"service discovery","r":"uses","ev":"f) Inter -service Communication\n•Microservices communicate using:\nSynchronous : REST APIs / gRPC\nAsynchronous : Message brokers (Kafka, RabbitMQ).","sup":1},{"t":"inter-service communication","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nTypes of Inter -Service Communication\na) Synchronous C","sup":1},{"t":"event","r":"uses","ev":"Real -Time Applications\n•Netflix  → Uses gRPC  + event streaming for video recommendations \u0026 personalization.","sup":1}]},{"id":"c2m1","c":2,"name":"service discovery","kind":"practice","x":129.4,"y":31.2,"r":8.1,"imp":0.34,"mem":1.0,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nd) Service Discovery\n•Helps microservices find each other  automatically.","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nd) Service Discovery\n•Helps microservices find ","sup":1},{"t":"microservice","r":"example_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nd) Service Discovery\n•Helps microservices find ","sup":1},{"t":"REST API","r":"uses","ev":"f) Inter -service Communication\n•Microservices communicate using:\nSynchronous : REST APIs / gRPC\nAsynchronous : Message brokers (Kafka, RabbitMQ).","sup":1}]},{"id":"c2m2","c":2,"name":"REST API","kind":"practice","x":39.8,"y":51.6,"r":8.1,"imp":0.34,"mem":1.0,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"f) Inter -service Communication\n•Microservices communicate using:\nSynchronous : REST APIs / gRPC\nAsynchronous : Message brokers (Kafka, RabbitMQ).","rels":[{"t":"service discovery","r":"uses","ev":"f) Inter -service Communication\n•Microservices communicate using:\nSynchronous : REST APIs / gRPC\nAsynchronous : Message brokers (Kafka, RabbitMQ).","sup":1},{"t":"event","r":"uses","ev":"•Amazon  → REST APIs for order services + event -driven SQS for inventory.","sup":1}]},{"id":"c2m3","c":2,"name":"SQS","kind":"example","x":-32.0,"y":-5.7,"r":7.2,"imp":0.24,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":3,"sent":"•Amazon  → REST APIs for order services + event -driven SQS for inventory.","rels":[{"t":"event","r":"uses","ev":"•Amazon  → REST APIs for order services + event -driven SQS for inventory.","sup":1}]},{"id":"c2m4","c":2,"name":"NATS","kind":"example","x":-32.0,"y":-97.5,"r":7.2,"imp":0.24,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":4,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nc) Event -Driven Communication\n•Services publish events → other services subscribe .","rels":[{"t":"event","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nc) Event -Driven Communication\n•Services publish event","sup":1}]},{"id":"c2m5","c":2,"name":"Apache Kafka","kind":"example","x":39.8,"y":-154.8,"r":7.2,"imp":0.24,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":5,"sent":"•Tools: Apache Kafka, NATS, AWS SNS .","rels":[{"t":"event","r":"uses","ev":"•Tools: Apache Kafka, NATS, AWS SNS .","sup":1}]},{"id":"c2m6","c":2,"name":"AWS SNS","kind":"example","x":129.4,"y":-134.4,"r":7.2,"imp":0.24,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":6,"sent":"•Tools: Apache Kafka, NATS, AWS SNS .","rels":[{"t":"event","r":"uses","ev":"•Tools: Apache Kafka, NATS, AWS SNS .","sup":1}]},{"id":"c3m0","c":3,"name":"Domain-Driven Design","kind":"practice","x":1304.4,"y":214.9,"r":9.9,"imp":0.54,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"Theory - Key topics: \nMicro  services  Architecture : Introduction  Concept : Domain  Drive  Design,  Modelling : \nBounded  Context,  Workshop  using  end to end layering  of components  and cloud …","rels":[{"t":"microservices architecture","r":"related_to","ev":"Theory - Key topics: \nMicro  services  Architecture : Introduction  Concept : Domain  Drive  Design,  Modelling : \nBounded  Context,  Workshop  using  end to en","sup":1},{"t":"software design approach","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nIntroduction\n•Domain -Driven Design (DDD) is a software design approach introduce","sup":1},{"t":"DDD","r":"related_to","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nIntroduction\n•Domain -Driven Design (DDD) is a software design approach introduce","sup":1}]},{"id":"c3m1","c":3,"name":"business concept","kind":"category","x":1296.7,"y":256.4,"r":8.1,"imp":0.34,"mem":0.4,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"It \nfocuses on building software around the business domain instead of only the technical \nimplementation.","rels":[{"t":"Domain-Driven Design","r":"related_to","ev":"It \nfocuses on building software around the business domain instead of only the technical \nimplementation.","sup":1},{"t":"bounded context","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nIntroduction\n•Bounded Context  is one of the central patterns in Domain -Dr","sup":1}]},{"id":"c3m2","c":3,"name":"communication","kind":"practice","x":1274.5,"y":292.2,"r":8.1,"imp":0.34,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"•Communication  – Services interact using APIs, event -driven messaging, or service meshes.","rels":[{"t":"microservice","r":"uses","ev":"•Communication  – Services interact using APIs, event -driven messaging, or service meshes.","sup":1},{"t":"bounded context","r":"uses","ev":"•Inter -context communication can become complex.","sup":1}]},{"id":"c3m3","c":3,"name":"term","kind":"attribute","x":1240.8,"y":317.7,"r":7.2,"imp":0.24,"mem":0.3,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":3,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nIntroduction\n•Bounded Context  is one of the central patterns in Domain -Driven Design (DDD) .","rels":[{"t":"bounded context","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nIntroduction\n•Bounded Context  is one of the central patterns in Domain -Dr","sup":1}]},{"id":"c3m4","c":3,"name":"rule","kind":"attribute","x":1200.3,"y":329.2,"r":7.2,"imp":0.24,"mem":0.3,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":4,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nIntroduction\n•Bounded Context  is one of the central patterns in Domain -Driven Design (DDD) .","rels":[{"t":"bounded context","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nIntroduction\n•Bounded Context  is one of the central patterns in Domain -Dr","sup":1}]},{"id":"c3m5","c":3,"name":"e-commerce platform","kind":"example","x":1158.3,"y":325.3,"r":7.2,"imp":0.24,"mem":0.3,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":5,"sent":"Example: \nIn an e-commerce platform :\n•“Order”  in the Order Management context  means a customer’s purchase.","rels":[{"t":"bounded context","r":"example_of","ev":"Example: \nIn an e-commerce platform :\n•“Order”  in the Order Management context  means a customer’s purchase.","sup":1}]},{"id":"c3m6","c":3,"name":"Order Management","kind":"example","x":1120.5,"y":306.5,"r":7.2,"imp":0.24,"mem":0.3,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":6,"sent":"•Example: In e-commerce, “Order Management” and “Inventory Management” are separate \nbounded contexts.","rels":[{"t":"bounded context","r":"example_of","ev":"•Example: In e-commerce, “Order Management” and “Inventory Management” are separate \nbounded contexts.","sup":1}]},{"id":"c3m7","c":3,"name":"Inventory Management","kind":"example","x":1092.1,"y":275.3,"r":7.2,"imp":0.24,"mem":0.3,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":7,"sent":"•Example: In e-commerce, “Order Management” and “Inventory Management” are separate \nbounded contexts.","rels":[{"t":"bounded context","r":"example_of","ev":"•Example: In e-commerce, “Order Management” and “Inventory Management” are separate \nbounded contexts.","sup":1}]},{"id":"c3m8","c":3,"name":"software design approach","kind":"practice","x":1076.9,"y":236.0,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":8,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nIntroduction\n•Domain -Driven Design (DDD) is a software design approach introduced by Eric Evans.","rels":[{"t":"Domain-Driven Design","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nIntroduction\n•Domain -Driven Design (DDD) is a software design approach introduce","sup":1}]},{"id":"c3m9","c":3,"name":"team","kind":"practice","x":1076.9,"y":193.9,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":9,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nIntroduction\n•Bounded Context  is one of the central patterns in Domain -Driven Design (DDD) .","rels":[{"t":"bounded context","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nIntroduction\n•Bounded Context  is one of the central patterns in Domain -Dr","sup":1}]},{"id":"c3m10","c":3,"name":"domain model","kind":"attribute","x":1092.1,"y":154.5,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":10,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nAdvantages\n•Prevents domain model confusion.","rels":[{"t":"bounded context","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nAdvantages\n•Prevents domain model confusion.","sup":1}]},{"id":"c3m11","c":3,"name":"developer","kind":"practice","x":1120.5,"y":123.4,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":11,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nAdvantages\n•Prevents domain model confusion.","rels":[{"t":"bounded context","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nAdvantages\n•Prevents domain model confusion.","sup":1}]},{"id":"c3m12","c":3,"name":"business expert","kind":"practice","x":1158.3,"y":104.6,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":12,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nAdvantages\n•Prevents domain model confusion.","rels":[{"t":"bounded context","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nAdvantages\n•Prevents domain model confusion.","sup":1}]},{"id":"c3m13","c":3,"name":"analysis","kind":"practice","x":1200.3,"y":100.7,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":13,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nAdvantages\n•Prevents domain model confusion.","rels":[{"t":"bounded context","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nAdvantages\n•Prevents domain model confusion.","sup":1}]},{"id":"c3m14","c":3,"name":"cloud-native","kind":"attribute","x":1240.8,"y":112.2,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":14,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nIntroduction\n•Domain -Driven Design (DDD) is a software design approach introduced by Eric Evans.","rels":[{"t":"Domain-Driven Design","r":"related_to","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nIntroduction\n•Domain -Driven Design (DDD) is a software design approach introduce","sup":1}]},{"id":"c3m15","c":3,"name":"business problem","kind":"category","x":1274.5,"y":137.6,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":15,"sent":"It \nfocuses on building software around the business domain instead of only the technical \nimplementation.","rels":[{"t":"Domain-Driven Design","r":"related_to","ev":"It \nfocuses on building software around the business domain instead of only the technical \nimplementation.","sup":1}]},{"id":"c3m16","c":3,"name":"DDD","kind":"practice","x":1296.7,"y":173.5,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":16,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nIntroduction\n•Domain -Driven Design (DDD) is a software design approach introduced by Eric Evans.","rels":[{"t":"Domain-Driven Design","r":"related_to","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nIntroduction\n•Domain -Driven Design (DDD) is a software design approach introduce","sup":1}]},{"id":"c4m0","c":4,"name":"e-commerce","kind":"example","x":-678.0,"y":157.1,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nCore Concepts of DDD\n•Domain: The sphere of knowledge, activity, or interest around which the application logic revolves…","rels":[{"t":"business domain","r":"example_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TDomain Driven Design\nCore Concepts of DDD\n•Domain: The sphere of knowledge, activity, or interest arou","sup":1}]},{"id":"c4m1","c":4,"name":"Entity","kind":"example","x":-874.9,"y":157.1,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"•Aggregates: A cluster of domain objects treated as a single unit (root entity + value objects).","rels":[{"t":"business domain","r":"example_of","ev":"•Aggregates: A cluster of domain objects treated as a single unit (root entity + value objects).","sup":1}]},{"id":"c5m0","c":5,"name":"Ingress Controller","kind":"example","x":553.4,"y":-342.6,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"•Ingress Controller  (e.g., NGINX Ingress) manages external access with routing rules.","rels":[{"t":"service","r":"uses","ev":"•Ingress Controller  (e.g., NGINX Ingress) manages external access with routing rules.","sup":1},{"t":"Service Mesh","r":"example_of","ev":"•Ingress Controller  (e.g., NGINX Ingress) manages external access with routing rules.","sup":1}]},{"id":"c5m1","c":5,"name":"Linkerd","kind":"example","x":402.8,"y":-255.6,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"6) Service Mesh (Istio/ Linkerd )\n•A Service Mesh manages communication between microservices.","rels":[{"t":"Service Mesh","r":"example_of","ev":"6) Service Mesh (Istio/ Linkerd )\n•A Service Mesh manages communication between microservices.","sup":1}]},{"id":"c5m2","c":5,"name":"Istio","kind":"example","x":402.8,"y":-429.5,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"6) Service Mesh (Istio/ Linkerd )\n•A Service Mesh manages communication between microservices.","rels":[{"t":"Service Mesh","r":"example_of","ev":"6) Service Mesh (Istio/ Linkerd )\n•A Service Mesh manages communication between microservices.","sup":1}]},{"id":"c6m0","c":6,"name":"User Service","kind":"example","x":-157.6,"y":389.9,"r":8.8,"imp":0.42,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"•Example: In an e -commerce app:\n•User Service  (authentication)\n•Order Service  (manages orders)\n•Payment Service  (processes payments)\n•Inventory Service  (stock updates)\n•For the system to…","rels":[{"t":"microservice","r":"example_of","ev":"•Example: In an e -commerce app:\n•User Service  (authentication)\n•Order Service  (manages orders)\n•Payment Service  (processes payments)\n•Inventory Service  (st","sup":1},{"t":"microservice","r":"part_of","ev":"•Break it into two microservices  (User Service \u0026 Product Service).","sup":1}]},{"id":"c6m1","c":6,"name":"Payment Service","kind":"example","x":-163.5,"y":427.0,"r":8.8,"imp":0.42,"mem":0.75,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","rels":[{"t":"container resource management","r":"uses","ev":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","sup":1},{"t":"microservice","r":"example_of","ev":"•Example: In an e -commerce app:\n•User Service  (authentication)\n•Order Service  (manages orders)\n•Payment Service  (processes payments)\n•Inventory Service  (st","sup":1}]},{"id":"c6m2","c":6,"name":"monolithic architecture","kind":"example","x":-180.5,"y":460.4,"r":8.8,"imp":0.42,"mem":0.5,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nImplementation Mechanism\n•Decomposition\n•Break down a monolith into small services.","rels":[{"t":"microservices architecture","r":"related_to","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nIntroduction\n•Microservices Architecture (MSA)  is a","sup":1},{"t":"microservice","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nImplementation Mechanism\n•Decomposition\n•Break ","sup":1}]},{"id":"c6m3","c":6,"name":"Inventory service","kind":"example","x":-207.1,"y":487.0,"r":8.1,"imp":0.34,"mem":0.75,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":3,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nReal -Time Applications of Bounded Contexts\n•Amazon (E -commerce) : Contexts like Customer Service, Order…","rels":[{"t":"Order Management service","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nReal -Time Applications of Bounded Contexts\n•Amazon (E -commerce) : Context","sup":1},{"t":"microservice","r":"example_of","ev":"•Example: In an e -commerce app:\n•User Service  (authentication)\n•Order Service  (manages orders)\n•Payment Service  (processes payments)\n•Inventory Service  (st","sup":1}]},{"id":"c6m4","c":6,"name":"banking","kind":"example","x":-240.5,"y":504.0,"r":8.1,"imp":0.34,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":4,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  – Uses microservices to deliver…","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  –","sup":1},{"t":"microservice","r":"uses","ev":"•Banking  – Loan processing, customer onboarding, fraud detection as microservices.","sup":1}]},{"id":"c6m5","c":6,"name":"Uber","kind":"example","x":-277.6,"y":509.9,"r":8.1,"imp":0.34,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":5,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  – Uses microservices to deliver…","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  –","sup":1},{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nReal -Time Applications of Microservices\n•Netfl","sup":1}]},{"id":"c6m6","c":6,"name":"Netflix","kind":"example","x":-314.7,"y":504.0,"r":8.1,"imp":0.34,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":6,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  – Uses microservices to deliver…","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  –","sup":1},{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nReal -Time Applications of Microservices\n•Netfl","sup":1}]},{"id":"c6m7","c":6,"name":"Amazon","kind":"example","x":-348.1,"y":487.0,"r":8.1,"imp":0.34,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":7,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  – Uses microservices to deliver…","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  –","sup":1},{"t":"microservice","r":"uses","ev":"•Amazon  – Uses microservices for order management, inventory, shipping, payments.","sup":1}]},{"id":"c6m8","c":6,"name":"container resource management","kind":"practice","x":-374.7,"y":460.4,"r":7.2,"imp":0.24,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":8,"sent":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","rels":[{"t":"Recommendation Service","r":"uses","ev":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","sup":1},{"t":"Payment Service","r":"uses","ev":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","sup":1}]},{"id":"c6m9","c":6,"name":"order service","kind":"example","x":-391.7,"y":427.0,"r":7.2,"imp":0.24,"mem":0.5,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":9,"sent":"•Example: In an e -commerce app:\n•User Service  (authentication)\n•Order Service  (manages orders)\n•Payment Service  (processes payments)\n•Inventory Service  (stock updates)\n•For the system to…","rels":[{"t":"microservice","r":"example_of","ev":"•Example: In an e -commerce app:\n•User Service  (authentication)\n•Order Service  (manages orders)\n•Payment Service  (processes payments)\n•Inventory Service  (st","sup":1}]},{"id":"c6m10","c":6,"name":"Product Service","kind":"practice","x":-397.6,"y":389.9,"r":7.2,"imp":0.24,"mem":0.5,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":10,"sent":"•Break it into two microservices  (User Service \u0026 Product Service).","rels":[{"t":"microservice","r":"part_of","ev":"•Break it into two microservices  (User Service \u0026 Product Service).","sup":1}]},{"id":"c6m11","c":6,"name":"Recommendation Service","kind":"example","x":-391.7,"y":352.8,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":11,"sent":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","rels":[{"t":"container resource management","r":"uses","ev":"Container Resource Management - Containers can be assigned CPU and memory limits to \nensure efficient resource usage.","sup":1}]},{"id":"c6m12","c":6,"name":"Order Management service","kind":"example","x":-374.7,"y":319.4,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":12,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nReal -Time Applications of Bounded Contexts\n•Amazon (E -commerce) : Contexts like Customer Service, Order…","rels":[{"t":"Inventory service","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TModelling: Bounded Context\nReal -Time Applications of Bounded Contexts\n•Amazon (E -commerce) : Context","sup":1}]},{"id":"c6m13","c":6,"name":"scalability","kind":"attribute","x":-348.1,"y":292.8,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":13,"sent":"•Single Responsibility Principle  – A service is designed around one business capability \n(e.g., Payment Service, Inventory Service, User Authentication Service ).","rels":[{"t":"microservice","r":"uses","ev":"•Single Responsibility Principle  – A service is designed around one business capability \n(e.g., Payment Service, Inventory Service, User Authentication Service","sup":1}]},{"id":"c6m14","c":6,"name":"resilience \u0026 fault tolerance","kind":"attribute","x":-314.7,"y":275.8,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":14,"sent":"•Resilience \u0026 Fault Tolerance  – Failure in one service should not crash the whole system.","rels":[{"t":"microservice","r":"uses","ev":"•Resilience \u0026 Fault Tolerance  – Failure in one service should not crash the whole system.","sup":1}]},{"id":"c6m15","c":6,"name":"load balancer","kind":"practice","x":-277.6,"y":269.9,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":15,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nd) Service Discovery\n•Helps microservices find each other  automatically.","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nd) Service Discovery\n•Helps microservices find ","sup":1}]},{"id":"c6m16","c":6,"name":"lightweight protocol","kind":"practice","x":-240.5,"y":275.8,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":16,"sent":"•Each service is designed to perform a single business function  and communicates with \nother services using lightweight protocols (typically HTTP/REST or gRPC , sometimes \nmessaging queues like…","rels":[{"t":"microservice","r":"uses","ev":"•Each service is designed to perform a single business function  and communicates with \nother services using lightweight protocols (typically HTTP/REST or gRPC ","sup":1}]},{"id":"c6m17","c":6,"name":"healthcare","kind":"example","x":-207.1,"y":292.8,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":17,"sent":"•Healthcare  – Patient records, appointments, billing as separate microservices.","rels":[{"t":"microservice","r":"uses","ev":"•Healthcare  – Patient records, appointments, billing as separate microservices.","sup":1}]},{"id":"c6m18","c":6,"name":"event-driven communication","kind":"practice","x":-180.5,"y":319.4,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":18,"sent":"•Encourages clear APIs, event -driven communication, and domain events .","rels":[{"t":"microservice","r":"uses","ev":"•Encourages clear APIs, event -driven communication, and domain events .","sup":1}]},{"id":"c6m19","c":6,"name":"containerization","kind":"practice","x":-163.5,"y":352.8,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":19,"sent":"Tools \u0026 Technologies for Microservices\n•Containerization : Docker\n•Orchestration : Kubernetes, Docker Swarm\n•Service Discovery : Consul, Eureka\n•API Gateways : Kong, Nginx, AWS API Gateway\n•Messaging…","rels":[{"t":"microservice","r":"uses","ev":"Tools \u0026 Technologies for Microservices\n•Containerization : Docker\n•Orchestration : Kubernetes, Docker Swarm\n•Service Discovery : Consul, Eureka\n•API Gateways : ","sup":1}]},{"id":"c6m20","c":6,"name":"Spotify","kind":"example","x":-116.0,"y":448.9,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":20,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  – Uses microservices to deliver…","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nReal -Time Applications of Microservices\n•Netflix  –","sup":1}]},{"id":"c6m21","c":6,"name":"Event Sourcing","kind":"practice","x":-283.8,"y":561.8,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":21,"sent":"•Works well with cloud -native patterns: CQRS (Command Query Responsibility \nSegregation), Event Sourcing, and API Gateways .","rels":[{"t":"microservice","r":"uses","ev":"•Works well with cloud -native patterns: CQRS (Command Query Responsibility \nSegregation), Event Sourcing, and API Gateways .","sup":1}]},{"id":"c6m22","c":6,"name":"Docker","kind":"example","x":-443.0,"y":437.2,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":22,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nImplementation Mechanism\n•Decomposition\n•Break down a monolith into small services.","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nImplementation Mechanism\n•Decomposition\n•Break ","sup":1}]},{"id":"c6m23","c":6,"name":"CQRS","kind":"practice","x":-373.6,"y":247.2,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":23,"sent":"DDD in Cloud -Native and Microservices\n•Bounded Context = Microservice\n•Each microservice manages its own domain logic \u0026 data .","rels":[{"t":"microservice","r":"uses","ev":"DDD in Cloud -Native and Microservices\n•Bounded Context = Microservice\n•Each microservice manages its own domain logic \u0026 data .","sup":1}]},{"id":"c6m24","c":6,"name":"Account Service","kind":"example","x":-171.6,"y":254.5,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":24,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nImplementation Mechanism\n•Decomposition\n•Break down a monolith into small services.","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nImplementation Mechanism\n•Decomposition\n•Break ","sup":1}]},{"id":"c7m0","c":7,"name":"microservices architecture","kind":"category","x":812.1,"y":84.1,"r":10.3,"imp":0.59,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"Theory - Key topics: \nMicro  services  Architecture : Introduction  Concept : Domain  Drive  Design,  Modelling : \nBounded  Context,  Workshop  using  end to end layering  of components  and cloud …","rels":[{"t":"Domain-Driven Design","r":"related_to","ev":"Theory - Key topics: \nMicro  services  Architecture : Introduction  Concept : Domain  Drive  Design,  Modelling : \nBounded  Context,  Workshop  using  end to en","sup":1},{"t":"bounded context","r":"related_to","ev":"Theory - Key topics: \nMicro  services  Architecture : Introduction  Concept : Domain  Drive  Design,  Modelling : \nBounded  Context,  Workshop  using  end to en","sup":1},{"t":"container","r":"uses","ev":"Theory - Key topics: \nMicro  services  Architecture : Introduction  Concept : Domain  Drive  Design,  Modelling : \nBounded  Context,  Workshop  using  end to en","sup":1}]},{"id":"c7m1","c":7,"name":"API Gateway","kind":"component","x":801.0,"y":132.9,"r":8.1,"imp":0.34,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"b) API Gateway\n•Entry point for all client requests.","rels":[{"t":"microservice","r":"uses","ev":"b) API Gateway\n•Entry point for all client requests.","sup":1},{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nChallenges in Inter -Service Communication\n•Latency  →","sup":1}]},{"id":"c7m2","c":7,"name":"function as a service","kind":"practice","x":769.8,"y":172.0,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"CA Project  \nmilestone  Archetype  Submission,  Serverless  Architecture,  Introduction  Concept : \nFunction  as a service,  Modelling : Functions,  Technology : Elements  of functions  and \nworkflow…","rels":[{"t":"microservices architecture","r":"uses","ev":"CA Project  \nmilestone  Archetype  Submission,  Serverless  Architecture,  Introduction  Concept : \nFunction  as a service,  Modelling : Functions,  Technology ","sup":1},{"t":"function","r":"related_to","ev":"CA Project  \nmilestone  Archetype  Submission,  Serverless  Architecture,  Introduction  Concept : \nFunction  as a service,  Modelling : Functions,  Technology ","sup":1}]},{"id":"c7m3","c":7,"name":"function","kind":"practice","x":724.7,"y":193.7,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":3,"sent":"CA Project  \nmilestone  Archetype  Submission,  Serverless  Architecture,  Introduction  Concept : \nFunction  as a service,  Modelling : Functions,  Technology : Elements  of functions  and \nworkflow…","rels":[{"t":"microservices architecture","r":"uses","ev":"CA Project  \nmilestone  Archetype  Submission,  Serverless  Architecture,  Introduction  Concept : \nFunction  as a service,  Modelling : Functions,  Technology ","sup":1},{"t":"function as a service","r":"related_to","ev":"CA Project  \nmilestone  Archetype  Submission,  Serverless  Architecture,  Introduction  Concept : \nFunction  as a service,  Modelling : Functions,  Technology ","sup":1}]},{"id":"c7m4","c":7,"name":"technology choices","kind":"practice","x":674.6,"y":193.7,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":4,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles.","rels":[{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles","sup":1}]},{"id":"c7m5","c":7,"name":"scaling","kind":"practice","x":629.6,"y":172.0,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":5,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles.","rels":[{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles","sup":1}]},{"id":"c7m6","c":7,"name":"mTLS","kind":"practice","x":598.3,"y":132.9,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":6,"sent":"•Secure communication with mTLS  + JWT .","rels":[{"t":"microservices architecture","r":"uses","ev":"•Secure communication with mTLS  + JWT .","sup":1}]},{"id":"c7m7","c":7,"name":"fault isolation","kind":"practice","x":587.2,"y":84.1,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":7,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles.","rels":[{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles","sup":1}]},{"id":"c7m8","c":7,"name":"event-driven design","kind":"practice","x":598.3,"y":35.3,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":8,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nChallenges in Inter -Service Communication\n•Latency  → Multiple calls can slow responses.","rels":[{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nChallenges in Inter -Service Communication\n•Latency  →","sup":1}]},{"id":"c7m9","c":7,"name":"development cycle","kind":"practice","x":629.6,"y":-3.8,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":9,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles.","rels":[{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles","sup":1}]},{"id":"c7m10","c":7,"name":"circuit breaker","kind":"practice","x":674.6,"y":-25.5,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":10,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nChallenges in Inter -Service Communication\n•Latency  → Multiple calls can slow responses.","rels":[{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Inter -micro services communication\nChallenges in Inter -Service Communication\n•Latency  →","sup":1}]},{"id":"c7m11","c":7,"name":"JWT","kind":"practice","x":724.7,"y":-25.5,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":11,"sent":"•Secure communication with mTLS  + JWT .","rels":[{"t":"microservices architecture","r":"uses","ev":"•Secure communication with mTLS  + JWT .","sup":1}]},{"id":"c7m12","c":7,"name":"DevOps","kind":"practice","x":769.8,"y":-3.8,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":12,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles.","rels":[{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles","sup":1}]},{"id":"c7m13","c":7,"name":"CI/CD pipeline","kind":"practice","x":801.0,"y":35.3,"r":7.2,"imp":0.24,"mem":0.2,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":13,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles.","rels":[{"t":"microservices architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMicro services Architecture: Introduction Concept\nAdvantages\n•Faster development and deployment cycles","sup":1}]},{"id":"c8m0","c":8,"name":"service","kind":"component","x":-338.6,"y":-193.2,"r":8.8,"imp":0.42,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nElements of Microservices Architecture\na) Service\n•The smallest unit in microservices.","rels":[{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nElements of Microservices Architecture\na) Servi","sup":1},{"t":"Pod","r":"uses","ev":"•Each Pod gets its own IP .","sup":1},{"t":"Ingress Controller","r":"uses","ev":"•Ingress Controller  (e.g., NGINX Ingress) manages external access with routing rules.","sup":1}]},{"id":"c8m1","c":8,"name":"Persistent Volume (PV)","kind":"example","x":-390.9,"y":-102.6,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that need persistent identity and \nstorage.","rels":[{"t":"StatefulSet","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that ","sup":1},{"t":"Kubernetes","r":"part_of","ev":"Persistent Volume Claim (PVC)\n•A request made by a Pod asking Kubernetes for storage.","sup":1},{"t":"Persistent Volume Claim (PVC)","r":"uses","ev":"Examples: MySQL, PostgreSQL, Cassandra, Kafka\n4) Persistent Volumes (PV) and Persistent Volume Claims (PVC)\n•Containers lose data when restarted.","sup":1}]},{"id":"c8m2","c":8,"name":"StatefulSet","kind":"practice","x":-495.6,"y":-102.6,"r":7.2,"imp":0.24,"mem":0.75,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that need persistent identity and \nstorage.","rels":[{"t":"Persistent Volume (PV)","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that ","sup":1},{"t":"Persistent Volume Claim (PVC)","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that ","sup":1},{"t":"Persistent Volume Claim (PVC)","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that ","sup":1}]},{"id":"c8m3","c":8,"name":"Persistent Volume Claim (PVC)","kind":"practice","x":-548.0,"y":-193.2,"r":7.2,"imp":0.24,"mem":0.75,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":3,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that need persistent identity and \nstorage.","rels":[{"t":"StatefulSet","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that ","sup":1},{"t":"StatefulSet","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n3) StatefulSets  - A StatefulSet  manages applications that ","sup":1},{"t":"Persistent Volume (PV)","r":"uses","ev":"Examples: MySQL, PostgreSQL, Cassandra, Kafka\n4) Persistent Volumes (PV) and Persistent Volume Claims (PVC)\n•Containers lose data when restarted.","sup":1}]},{"id":"c8m4","c":8,"name":"Pod","kind":"component","x":-495.6,"y":-283.9,"r":7.2,"imp":0.24,"mem":0.75,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":4,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n5) Kubernetes Networking\n•Networking allows Pods and users to communicate.","rels":[{"t":"Kubernetes","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\n5) Kubernetes Networking\n•Networking allows Pods and users t","sup":1},{"t":"service","r":"uses","ev":"•Each Pod gets its own IP .","sup":1}]},{"id":"c8m5","c":8,"name":"Namespace","kind":"category","x":-390.9,"y":-283.9,"r":7.2,"imp":0.24,"mem":0.5,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":5,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\nAdvanced Kubernetes Concepts\n1) Namespaces: A Namespace is a logical partition inside a Kubernetes…","rels":[{"t":"Kubernetes","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TTechnology: Container - Kubernetes part 2\nAdvanced Kubernetes Concepts\n1) Namespaces: A Namespace is a","sup":1}]},{"id":"c9m0","c":9,"name":"API","kind":"practice","x":408.6,"y":386.5,"r":8.8,"imp":0.42,"mem":0.5,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":0,"sent":"Bounded Context in Cloud -Native Systems\n•Each bounded context → one microservice.","rels":[{"t":"microservice","r":"uses","ev":"Bounded Context in Cloud -Native Systems\n•Each bounded context → one microservice.","sup":1},{"t":"Cloud Native Architecture","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMini Application: Student Feedback API\n Covers UI → API → Database  layering, but in a very simple way","sup":1}]},{"id":"c9m1","c":9,"name":"Database","kind":"component","x":387.8,"y":450.5,"r":8.1,"imp":0.34,"mem":0.5,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":1,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMini Application: Student Feedback API\n Covers UI → API → Database  layering, but in a very simple way.","rels":[{"t":"Cloud Native Architecture","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMini Application: Student Feedback API\n Covers UI → API → Database  layering, but in a very simple way","sup":1},{"t":"microservice","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TElement of micro services and implementation mechanism\nElements of Microservices Architecture\na) Servi","sup":1}]},{"id":"c9m2","c":9,"name":"UI","kind":"component","x":333.3,"y":490.1,"r":7.2,"imp":0.24,"mem":1.0,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":2,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMini Application: Student Feedback API\n Covers UI → API → Database  layering, but in a very simple way.","rels":[{"t":"Cloud Native Architecture","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMini Application: Student Feedback API\n Covers UI → API → Database  layering, but in a very simple way","sup":1},{"t":"frontend","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMini Application: Student Feedback API\n Covers UI → API → Database  layering, but in a very simple way","sup":1}]},{"id":"c9m3","c":9,"name":"food delivery app","kind":"example","x":266.0,"y":490.1,"r":7.2,"imp":0.24,"mem":1.0,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":3,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 user interaction\n2.Application Layer…","rels":[{"t":"presentation layer","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1},{"t":"application layer","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1},{"t":"data layer","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1}]},{"id":"c9m4","c":9,"name":"presentation layer","kind":"component","x":211.5,"y":450.5,"r":7.2,"imp":0.24,"mem":0.75,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":4,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 user interaction\n2.Application Layer…","rels":[{"t":"Cloud Native Architecture","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1},{"t":"food delivery app","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1}]},{"id":"c9m5","c":9,"name":"integration layer","kind":"component","x":190.7,"y":386.5,"r":7.2,"imp":0.24,"mem":0.75,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":5,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 user interaction\n2.Application Layer…","rels":[{"t":"Cloud Native Architecture","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1},{"t":"food delivery app","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1}]},{"id":"c9m6","c":9,"name":"data layer","kind":"component","x":211.5,"y":322.4,"r":7.2,"imp":0.24,"mem":0.75,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":6,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 user interaction\n2.Application Layer…","rels":[{"t":"Cloud Native Architecture","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1},{"t":"food delivery app","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1}]},{"id":"c9m7","c":9,"name":"application layer","kind":"component","x":266.0,"y":282.8,"r":7.2,"imp":0.24,"mem":0.75,"direct":true,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":7,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 user interaction\n2.Application Layer…","rels":[{"t":"Cloud Native Architecture","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1},{"t":"food delivery app","r":"uses","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TCommon Layers in an End -to-End Cloud -Native Application\n1.Presentation Layer (Client Layer) - UI \u0026 u","sup":1}]},{"id":"c9m8","c":9,"name":"frontend","kind":"component","x":333.3,"y":282.8,"r":7.2,"imp":0.24,"mem":0.5,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":8,"sent":"Cloud Native Architecture for Modern Platforms - 21CSE477TMini Application: Student Feedback API\n Covers UI → API → Database  layering, but in a very simple way.","rels":[{"t":"UI","r":"part_of","ev":"Cloud Native Architecture for Modern Platforms - 21CSE477TMini Application: Student Feedback API\n Covers UI → API → Database  layering, but in a very simple way","sup":1}]},{"id":"c9m9","c":9,"name":"Modern Platform","kind":"category","x":387.8,"y":322.4,"r":7.2,"imp":0.24,"mem":0.25,"direct":false,"multi":false,"src":["U3 CNAforMP 21CSE477T.pdf"],"rank":9,"sent":"Cloud Native Architecture for Modern Platforms -21CSE477TCloud Native Architecture for Modern Platforms\n21CSE477T\nDr.","rels":[{"t":"Cloud Native Architecture","r":"uses","ev":"Cloud Native Architecture for Modern Platforms -21CSE477TCloud Native Architecture for Modern Platforms\n21CSE477T\nDr.","sup":1}]}],"links":[{"a":6,"b":7,"w":8.5,"rel":"part_of","src":"microservice","tgt":"microservices architecture","tree":true},{"a":3,"b":6,"w":8.08,"rel":"type_of","src":"microservice","tgt":"bounded context","tree":true},{"a":2,"b":6,"w":7.5,"rel":"example_of","src":"service discovery","tgt":"microservice","tree":true},{"a":6,"b":8,"w":4.04,"rel":"uses","src":"Kubernetes","tgt":"microservice","tree":true},{"a":0,"b":6,"w":3.0,"rel":"uses","src":"microservice","tgt":"HTTP/REST","tree":true},{"a":6,"b":9,"w":3.0,"rel":"uses","src":"microservice","tgt":"API","tree":true},{"a":5,"b":8,"w":1.5,"rel":"uses","src":"service","tgt":"Ingress Controller","tree":true},{"a":1,"b":7,"w":1.5,"rel":"uses","src":"microservices architecture","tgt":"container","tree":true},{"a":3,"b":4,"w":1.0,"rel":"related_to","src":"Domain-Driven Design","tgt":"business domain","tree":true},{"a":3,"b":7,"w":3.0,"rel":"related_to","src":"microservices architecture","tgt":"Domain-Driven Design","tree":false}],"bridges":[]}</script>
+
+  <!-- Interactive Logic -->
+  <script>
+    (function() {
+      "use strict";
+
+      // 1. Load Data
+      const dataElem = document.getElementById("map-data");
+      let mapData = null;
+      try {
+        mapData = JSON.parse(dataElem.textContent || "{}");
+      } catch (err) {
+        console.error("Failed to parse map-data JSON", err);
+        return;
+      }
+
+      const meta = mapData.meta || {};
+      const clusters = mapData.clusters || [];
+      const members = mapData.members || [];
+      const links = mapData.links || [];
+      const bridges = mapData.bridges || [];
+      const expandPx = meta.expandPx || 240;
+      const detailPx = meta.detailPx || 640;
+
+      // Index structures
+      const clusterMap = new Map();
+      clusters.forEach(c => clusterMap.set(c.id, c));
+      const memberMap = new Map();
+      members.forEach(m => memberMap.set(m.id, m));
+      const membersByCluster = new Map();
+      members.forEach(m => {
+        if (!membersByCluster.has(m.c)) membersByCluster.set(m.c, []);
+        membersByCluster.get(m.c).push(m);
+      });
+
+      // DOM references
+      const svg = document.getElementById("map-svg");
+      const viewport = document.getElementById("viewport");
+      const gHalos = document.getElementById("g-halos");
+      const gLinks = document.getElementById("g-links");
+      const gSpokes = document.getElementById("g-spokes");
+      const gBridges = document.getElementById("g-bridges");
+      const gMembers = document.getElementById("g-members");
+      const gHubs = document.getElementById("g-hubs");
+      const gLabels = document.getElementById("g-labels");
+
+      const tooltip = document.getElementById("tooltip");
+      const detailPanel = document.getElementById("detail-panel");
+      const panelTitle = document.getElementById("panel-title");
+      const panelBody = document.getElementById("panel-body");
+      const panelCloseBtn = document.getElementById("panel-close-btn");
+
+      const searchInput = document.getElementById("search-input");
+      const searchDropdown = document.getElementById("search-dropdown");
+
+      const minimapSvg = document.getElementById("minimap-svg");
+      const minimapClusters = document.getElementById("minimap-clusters");
+      const minimapRect = document.getElementById("minimap-rect");
+
+      // Set Info Chip text safely
+      const infoTitle = document.getElementById("info-title");
+      infoTitle.textContent = meta.title || "Concept Map";
+      const infoStats = document.getElementById("info-stats");
+      const metrics = meta.metrics || {};
+      infoStats.textContent = (metrics.clusters || clusters.length) + " clusters • " +
+                              (metrics.concepts || members.length) + " concepts • Q=" +
+                              (metrics.modularity ? metrics.modularity.toFixed(2) : "0.00");
+
+      // 2. Compute Initial Bounds & k0
+      let vb = meta.viewBox || [-500, -400, 1000, 800];
+      const mapBounds = {
+        minX: vb[0],
+        minY: vb[1],
+        width: vb[2],
+        height: vb[3],
+        maxX: vb[0] + vb[2],
+        maxY: vb[1] + vb[3],
+      };
+
+      let k0 = 1.0;
+      let curX = 0, curY = 0, curK = 1.0;
+      let minK = 0.5, maxK = 15.0;
+
+      function calcFitTransform() {
+        const vw = window.innerWidth || 800;
+        const vh = window.innerHeight || 600;
+        const padX = vw * 0.06;
+        const padY = vh * 0.06;
+        const availW = Math.max(10, vw - 2 * padX);
+        const availH = Math.max(10, vh - 2 * padY);
+
+        const scaleX = availW / Math.max(1, mapBounds.width);
+        const scaleY = availH / Math.max(1, mapBounds.height);
+        k0 = Math.min(scaleX, scaleY);
+        minK = 0.8 * k0;
+        maxK = 14.0 * k0;
+
+        const centerX = mapBounds.minX + mapBounds.width / 2;
+        const centerY = mapBounds.minY + mapBounds.height / 2;
+        curK = k0;
+        curX = vw / 2 - centerX * curK;
+        curY = vh / 2 - centerY * curK;
+      }
+
+      // 3. Render SVG Elements
+      const clusterGroupElems = new Map();
+      const memberDotElems = new Map();
+      const hubCircleElems = new Map();
+      const linkElems = [];
+      const labelEntries = []; // for collision pass: {elem, isHub, isSelected, rank, text, x, y, fontPx}
+
+      function truncateText(str, maxLen) {
+        if (!str) return "";
+        return str.length > maxLen ? str.slice(0, maxLen - 1) + "…" : str;
+      }
+
+      function createSvgElement(tag) {
+        return document.createElementNS("http://www.w3.org/2000/svg", tag);
+      }
+
+      // Render Clusters & Halos
+      clusters.forEach(c => {
+        const cg = createSvgElement("g");
+        cg.setAttribute("class", "cluster collapsed");
+        cg.setAttribute("id", "cg-" + c.id);
+        clusterGroupElems.set(c.id, cg);
+
+        // Halo
+        const halo = createSvgElement("circle");
+        halo.setAttribute("class", "cluster-halo");
+        halo.setAttribute("cx", c.x);
+        halo.setAttribute("cy", c.y);
+        halo.setAttribute("r", c.halo);
+        halo.setAttribute("fill", c.color);
+        halo.setAttribute("stroke", c.color);
+        halo.setAttribute("stroke-width", "1.5");
+        halo.addEventListener("click", (e) => {
+          e.stopPropagation();
+          flyToCluster(c.id);
+          selectHub(c.id);
+        });
+        gHalos.appendChild(halo);
+
+        // Hub Circle
+        const hub = createSvgElement("circle");
+        hub.setAttribute("class", "hub-circle");
+        hub.setAttribute("id", "hub-" + c.id);
+        hub.setAttribute("cx", c.x);
+        hub.setAttribute("cy", c.y);
+        hub.setAttribute("r", c.hubR);
+        hub.setAttribute("fill", c.color);
+        hub.setAttribute("stroke", "#ffffff");
+        hub.setAttribute("stroke-width", "1.5");
+        hub.setAttribute("stroke-opacity", "0.3");
+        hub.addEventListener("click", (e) => {
+          e.stopPropagation();
+          flyToCluster(c.id);
+          selectHub(c.id);
+        });
+        hub.addEventListener("mouseenter", (e) => showTooltip(e, c.title, "Cluster (" + c.n + " concepts)"));
+        hub.addEventListener("mouseleave", hideTooltip);
+        gHubs.appendChild(hub);
+        hubCircleElems.set(c.id, hub);
+
+        // Hub Labels
+        // Collapsed label
+        const lblCol = createSvgElement("text");
+        lblCol.setAttribute("class", "map-label label-hub-collapsed");
+        lblCol.setAttribute("x", c.x);
+        lblCol.setAttribute("y", c.y);
+        lblCol.textContent = truncateText(c.title, 26);
+        gLabels.appendChild(lblCol);
+        labelEntries.push({
+          elem: lblCol,
+          clusterId: c.id,
+          type: "hub-collapsed",
+          rank: -2,
+          text: lblCol.textContent,
+          x: c.x,
+          y: c.y,
+          fontPx: 18,
+          anchor: "middle"
+        });
+
+        // Expanded hub title (next to circle)
+        const lblExpG = createSvgElement("g");
+        lblExpG.setAttribute("class", "map-label label-hub-expanded");
+        lblExpG.setAttribute("transform", "translate(" + (c.x + c.hubR + 4) + "," + c.y + ")");
+        const lblExp = createSvgElement("text");
+        lblExp.setAttribute("dx", "0.4em");
+        lblExp.textContent = truncateText(c.title, 28);
+        lblExpG.appendChild(lblExp);
+        gLabels.appendChild(lblExpG);
+        labelEntries.push({
+          elem: lblExpG,
+          clusterId: c.id,
+          type: "hub-expanded",
+          rank: -1,
+          text: lblExp.textContent,
+          x: c.x + c.hubR + 4,
+          y: c.y,
+          fontPx: 14,
+          anchor: "start"
+        });
+      });
+
+      // Render Cluster-to-Cluster Links
+      links.forEach(l => {
+        const ca = clusterMap.get(l.a);
+        const cb = clusterMap.get(l.b);
+        if (!ca || !cb) return;
+
+        // Angle between centers
+        const dx = cb.x - ca.x;
+        const dy = cb.y - ca.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 1e-4) return;
+
+        const ux = dx / d;
+        const uy = dy / d;
+        // Endpoints on halo edges
+        const x1 = ca.x + ux * ca.halo;
+        const y1 = ca.y + uy * ca.halo;
+        const x2 = cb.x - ux * cb.halo;
+        const y2 = cb.y - uy * cb.halo;
+
+        const w = l.w || 0;
+        const strokeW = Math.max(1, 0.8 + 0.6 * Math.log(1 + w * 10));
+
+        const line = createSvgElement("line");
+        line.setAttribute("class", "cluster-link" + (l.tree ? " tree" : ""));
+        line.setAttribute("x1", x1);
+        line.setAttribute("y1", y1);
+        line.setAttribute("x2", x2);
+        line.setAttribute("y2", y2);
+        line.setAttribute("stroke-width", strokeW.toFixed(1));
+        gLinks.appendChild(line);
+
+        // Relation label
+        let lblLink = null;
+        if (l.rel) {
+          lblLink = createSvgElement("text");
+          lblLink.setAttribute("class", "map-label label-link");
+          lblLink.setAttribute("x", ((x1 + x2) / 2).toFixed(1));
+          lblLink.setAttribute("y", ((y1 + y2) / 2).toFixed(1));
+          lblLink.textContent = l.rel;
+          lblLink.style.display = "none";
+          gLabels.appendChild(lblLink);
+        }
+
+        linkElems.push({
+          elem: line,
+          lblElem: lblLink,
+          a: l.a,
+          b: l.b,
+          rel: l.rel,
+          w: w,
+          tree: l.tree,
+          len: Math.hypot(x2 - x1, y2 - y1),
+        });
+      });
+
+      // Render Members, Spokes & Member Labels
+      members.forEach(m => {
+        const c = clusterMap.get(m.c);
+        if (!c) return;
+
+        // Spoke line to hub
+        const spoke = createSvgElement("line");
+        spoke.setAttribute("class", "spoke-line" + (m.direct ? " direct" : ""));
+        spoke.setAttribute("x1", c.x);
+        spoke.setAttribute("y1", c.y);
+        spoke.setAttribute("x2", m.x);
+        spoke.setAttribute("y2", m.y);
+        spoke.setAttribute("stroke", c.color);
+        if (!m.direct) {
+          spoke.setAttribute("stroke-dasharray", "2 3");
+        }
+        gSpokes.appendChild(spoke);
+
+        // Member dot
+        const dot = createSvgElement("circle");
+        dot.setAttribute("class", "member-dot");
+        dot.setAttribute("id", "dot-" + m.id);
+        dot.setAttribute("cx", m.x);
+        dot.setAttribute("cy", m.y);
+        dot.setAttribute("r", m.r);
+        dot.setAttribute("fill", c.color);
+        const op = Math.max(0.35, Math.min(1.0, 0.35 + 0.65 * (m.mem || 0.5)));
+        dot.setAttribute("fill-opacity", op.toFixed(2));
+        if (m.multi) {
+          dot.setAttribute("stroke", "#f2c14e");
+          dot.setAttribute("stroke-width", "2");
+        } else {
+          dot.setAttribute("stroke", "rgba(255,255,255,0.2)");
+          dot.setAttribute("stroke-width", "1");
+        }
+
+        dot.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selectMember(m.id);
+        });
+        dot.addEventListener("mouseenter", (e) => showTooltip(e, m.name, m.kind + " • " + c.title));
+        dot.addEventListener("mouseleave", hideTooltip);
+
+        gMembers.appendChild(dot);
+        memberDotElems.set(m.id, dot);
+
+        // Member label
+        const isRight = (m.x >= c.x);
+        const lblG = createSvgElement("g");
+        lblG.setAttribute("class", "map-label label-member");
+        const offX = isRight ? (m.x + m.r + 3) : (m.x - m.r - 3);
+        lblG.setAttribute("transform", "translate(" + offX + "," + m.y + ")");
+        const textNode = createSvgElement("text");
+        textNode.setAttribute("dx", isRight ? "0.3em" : "-0.3em");
+        textNode.setAttribute("text-anchor", isRight ? "start" : "end");
+        textNode.textContent = truncateText(m.name, 28);
+        lblG.appendChild(textNode);
+        lblG.style.display = "none";
+        gLabels.appendChild(lblG);
+
+        labelEntries.push({
+          elem: lblG,
+          clusterId: m.c,
+          memberId: m.id,
+          type: "member",
+          rank: m.rank,
+          text: textNode.textContent,
+          x: offX,
+          y: m.y,
+          fontPx: 12,
+          anchor: isRight ? "start" : "end"
+        });
+      });
+
+      // Render Bridges
+      bridges.forEach(b => {
+        const m = memberMap.get(b.m);
+        const partnerHub = clusterMap.get(b.to);
+        if (m && partnerHub) {
+          const brLine = createSvgElement("line");
+          brLine.setAttribute("class", "bridge-line");
+          brLine.setAttribute("id", "br-" + b.m);
+          brLine.setAttribute("x1", m.x);
+          brLine.setAttribute("y1", m.y);
+          brLine.setAttribute("x2", partnerHub.x);
+          brLine.setAttribute("y2", partnerHub.y);
+          gBridges.appendChild(brLine);
+        }
+      });
+
+      // Render Minimap
+      function setupMinimap() {
+        while (minimapClusters.firstChild) {
+          minimapClusters.removeChild(minimapClusters.firstChild);
+        }
+        const mw = 160, mh = 110;
+        minimapSvg.setAttribute("viewBox", "0 0 " + mw + " " + mh);
+
+        const pad = 10;
+        const scaleX = (mw - 2 * pad) / Math.max(1, mapBounds.width);
+        const scaleY = (mh - 2 * pad) / Math.max(1, mapBounds.height);
+        const ms = Math.min(scaleX, scaleY);
+        const offX = pad + (mw - 2 * pad - mapBounds.width * ms) / 2;
+        const offY = pad + (mh - 2 * pad - mapBounds.height * ms) / 2;
+
+        minimapSvg._scale = ms;
+        minimapSvg._offX = offX;
+        minimapSvg._offY = offY;
+
+        clusters.forEach(c => {
+          const mcx = offX + (c.x - mapBounds.minX) * ms;
+          const mcy = offY + (c.y - mapBounds.minY) * ms;
+          const mr = Math.max(2, c.halo * ms);
+
+          const dot = createSvgElement("circle");
+          dot.setAttribute("cx", mcx.toFixed(1));
+          dot.setAttribute("cy", mcy.toFixed(1));
+          dot.setAttribute("r", mr.toFixed(1));
+          dot.setAttribute("fill", c.color);
+          dot.setAttribute("fill-opacity", "0.5");
+          minimapClusters.appendChild(dot);
+        });
+      }
+
+      function updateMinimapRect() {
+        const ms = minimapSvg._scale || 0.1;
+        const offX = minimapSvg._offX || 0;
+        const offY = minimapSvg._offY || 0;
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        const viewLeft = -curX / curK;
+        const viewTop = -curY / curK;
+        const viewW = vw / curK;
+        const viewH = vh / curK;
+
+        const rx = offX + (viewLeft - mapBounds.minX) * ms;
+        const ry = offY + (viewTop - mapBounds.minY) * ms;
+        const rw = viewW * ms;
+        const rh = viewH * ms;
+
+        minimapRect.setAttribute("x", Math.max(0, rx).toFixed(1));
+        minimapRect.setAttribute("y", Math.max(0, ry).toFixed(1));
+        minimapRect.setAttribute("width", Math.max(4, rw).toFixed(1));
+        minimapRect.setAttribute("height", Math.max(4, rh).toFixed(1));
+      }
+
+      // 4. Viewport Transform & Semantic Zoom
+      let rafPending = false;
+      let labelLayoutTimer = null;
+
+      function applyTransform() {
+        viewport.setAttribute("transform", "translate(" + curX.toFixed(2) + "," + curY.toFixed(2) + ") scale(" + curK.toFixed(4) + ")");
+        svg.style.setProperty("--inv", (1.0 / curK).toFixed(4));
+        updateSemanticZoomAndLinks();
+        updateMinimapRect();
+
+        // Debounce label collision pass 80ms
+        if (labelLayoutTimer) clearTimeout(labelLayoutTimer);
+        labelLayoutTimer = setTimeout(runLabelCollisionLayout, 80);
+      }
+
+      function requestTransformUpdate() {
+        if (!rafPending) {
+          rafPending = true;
+          requestAnimationFrame(() => {
+            rafPending = false;
+            applyTransform();
+          });
+        }
+      }
+
+      function updateSemanticZoomAndLinks() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Viewport bounds in world coords
+        const wLeft = -curX / curK;
+        const wTop = -curY / curK;
+        const wRight = wLeft + vw / curK;
+        const wBottom = wTop + vh / curK;
+
+        clusters.forEach(c => {
+          const cg = clusterGroupElems.get(c.id);
+          if (!cg) return;
+
+          // Frustum culling
+          const out = (c.x + c.halo < wLeft || c.x - c.halo > wRight ||
+                       c.y + c.halo < wTop || c.y - c.halo > wBottom);
+          if (out) {
+            cg.style.display = "none";
+            return;
+          }
+          cg.style.display = "";
+
+          // Cluster on-screen diameter
+          const diamPx = 2 * c.halo * curK;
+          let lod = "collapsed";
+          if (diamPx >= detailPx) {
+            lod = "detail";
+          } else if (diamPx >= expandPx) {
+            lod = "expanded";
+          }
+
+          if (cg._currentLod !== lod) {
+            cg._currentLod = lod;
+            cg.setAttribute("class", "cluster " + lod);
+          }
+        });
+
+        // Link relation labels visibility
+        linkElems.forEach(l => {
+          if (!l.lblElem) return;
+          const onScreenLen = l.len * curK;
+          const ca = clusterMap.get(l.a);
+          const cb = clusterMap.get(l.b);
+          const caLod = clusterGroupElems.get(l.a)?._currentLod;
+          const cbLod = clusterGroupElems.get(l.b)?._currentLod;
+
+          let show = (onScreenLen > 300);
+          if (l.rel === "uses" && caLod !== "detail" && cbLod !== "detail") {
+            show = false;
+          }
+          l.lblElem.style.display = show ? "" : "none";
+        });
+      }
+
+      // 5. Label Collision Layout Pass
+      function runLabelCollisionLayout() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const cellSize = 80;
+        const gridCols = Math.ceil(vw / cellSize) + 1;
+        const gridRows = Math.ceil(vh / cellSize) + 1;
+        const grid = new Map();
+
+        function getCellKeys(minX, minY, maxX, maxY) {
+          const c0 = Math.max(0, Math.floor(minX / cellSize));
+          const c1 = Math.min(gridCols - 1, Math.floor(maxX / cellSize));
+          const r0 = Math.max(0, Math.floor(minY / cellSize));
+          const r1 = Math.min(gridRows - 1, Math.floor(maxY / cellSize));
+          const keys = [];
+          for (let r = r0; r <= r1; r++) {
+            for (let c = c0; c <= c1; c++) {
+              keys.push(r * gridCols + c);
+            }
+          }
+          return keys;
+        }
+
+        function checkOverlap(b, keys) {
+          for (let i = 0; i < keys.length; i++) {
+            const list = grid.get(keys[i]);
+            if (list) {
+              for (let j = 0; j < list.length; j++) {
+                const o = list[j];
+                if (!(b.maxX < o.minX || b.minX > o.maxX || b.maxY < o.minY || b.minY > o.maxY)) {
+                  return true;
+                }
+              }
+            }
+          }
+          return false;
+        }
+
+        function insertBox(b, keys) {
+          keys.forEach(k => {
+            if (!grid.has(k)) grid.set(k, []);
+            grid.get(k).push(b);
+          });
+        }
+
+        // Sort candidates
+        const candidates = [...labelEntries].sort((a, b) => {
+          if (a.rank !== b.rank) return a.rank - b.rank;
+          return (a.text.length - b.text.length);
+        });
+
+        candidates.forEach(cand => {
+          const cg = clusterGroupElems.get(cand.clusterId);
+          const lod = cg ? cg._currentLod : "collapsed";
+
+          // Rule check
+          if (cand.type === "hub-collapsed") {
+            if (lod !== "collapsed") {
+              cand.elem.style.display = "none";
+              return;
+            }
+          } else if (cand.type === "hub-expanded") {
+            if (lod === "collapsed") {
+              cand.elem.style.display = "none";
+              return;
+            }
+          } else if (cand.type === "member") {
+            if (lod === "collapsed") {
+              cand.elem.style.display = "none";
+              return;
+            }
+            if (lod === "expanded" && cand.rank >= 5) {
+              cand.elem.style.display = "none";
+              return;
+            }
+          }
+
+          // Screen coords
+          const sx = curX + cand.x * curK;
+          const sy = curY + cand.y * curK;
+
+          if (sx < -100 || sx > vw + 100 || sy < -50 || sy > vh + 50) {
+            cand.elem.style.display = "none";
+            return;
+          }
+
+          const boxW = cand.text.length * 0.58 * cand.fontPx;
+          const boxH = cand.fontPx * 1.3;
+          let minX, maxX;
+          if (cand.anchor === "middle") {
+            minX = sx - boxW / 2;
+            maxX = sx + boxW / 2;
+          } else if (cand.anchor === "end") {
+            minX = sx - boxW;
+            maxX = sx;
+          } else {
+            minX = sx;
+            maxX = sx + boxW;
+          }
+          const minY = sy - boxH / 2;
+          const maxY = sy + boxH / 2;
+
+          const box = { minX, minY, maxX, maxY };
+          const keys = getCellKeys(minX, minY, maxX, maxY);
+
+          if (checkOverlap(box, keys)) {
+            cand.elem.style.display = "none";
+          } else {
+            insertBox(box, keys);
+            cand.elem.style.display = "";
+          }
+        });
+      }
+
+      // 6. Navigation: Fly-to & Animation
+      let flyAnim = null;
+
+      function flyTo(targetX, targetY, targetK, duration = 400) {
+        if (flyAnim) cancelAnimationFrame(flyAnim);
+        const startX = curX;
+        const startY = curY;
+        const startK = curK;
+        const startTime = performance.now();
+
+        function step(now) {
+          const elapsed = now - startTime;
+          const t = Math.min(1.0, elapsed / duration);
+          const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+          curX = startX + (targetX - startX) * ease;
+          curY = startY + (targetY - startY) * ease;
+          curK = startK + (targetK - startK) * ease;
+          applyTransform();
+
+          if (t < 1.0) {
+            flyAnim = requestAnimationFrame(step);
+          } else {
+            flyAnim = null;
+          }
+        }
+        flyAnim = requestAnimationFrame(step);
+      }
+
+      function flyToCluster(clusterId) {
+        const c = clusterMap.get(clusterId);
+        if (!c) return;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const targetK = Math.min(maxK, Math.max(minK, (Math.min(vw, vh) * 0.7) / (2 * c.halo)));
+        const targetX = vw / 2 - c.x * targetK;
+        const targetY = vh / 2 - c.y * targetK;
+        flyTo(targetX, targetY, targetK, 400);
+      }
+
+      function flyToNode(x, y) {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const targetK = Math.max(curK, 1.8 * k0);
+        const targetX = vw / 2 - x * targetK;
+        const targetY = vh / 2 - y * targetK;
+        flyTo(targetX, targetY, targetK, 380);
+      }
+
+      // 7. Selection & Detail Panel
+      let selectedNode = null;
+
+      function clearSelection() {
+        selectedNode = null;
+        viewport.classList.remove("has-selection");
+        document.querySelectorAll(".is-selected, .is-connected").forEach(el => {
+          el.classList.remove("is-selected", "is-connected");
+        });
+        detailPanel.style.display = "none";
+      }
+
+      function selectHub(clusterId) {
+        clearSelection();
+        const c = clusterMap.get(clusterId);
+        if (!c) return;
+        selectedNode = { type: "hub", id: clusterId };
+        viewport.classList.add("has-selection");
+
+        const hubEl = hubCircleElems.get(clusterId);
+        if (hubEl) hubEl.classList.add("is-selected");
+
+        // Connected links
+        linkElems.forEach(l => {
+          if (l.a === clusterId || l.b === clusterId) {
+            l.elem.classList.add("is-connected");
+            const otherHub = hubCircleElems.get(l.a === clusterId ? l.b : l.a);
+            if (otherHub) otherHub.classList.add("is-connected");
+          }
+        });
+
+        renderClusterDetailPanel(c);
+      }
+
+      function selectMember(memberId) {
+        clearSelection();
+        const m = memberMap.get(memberId);
+        if (!m) return;
+        selectedNode = { type: "member", id: memberId };
+        viewport.classList.add("has-selection");
+
+        const dot = memberDotElems.get(memberId);
+        if (dot) dot.classList.add("is-selected");
+
+        const hubEl = hubCircleElems.get(m.c);
+        if (hubEl) hubEl.classList.add("is-connected");
+
+        // Spoke
+        const c = clusterMap.get(m.c);
+        // Bridge lines
+        const brEl = document.getElementById("br-" + memberId);
+        if (brEl) {
+          brEl.classList.add("is-connected");
+          const brData = bridges.find(b => b.m === memberId);
+          if (brData) {
+            const partnerHub = hubCircleElems.get(brData.to);
+            if (partnerHub) partnerHub.classList.add("is-connected");
+          }
+        }
+
+        renderMemberDetailPanel(m, c);
+      }
+
+      function renderMemberDetailPanel(m, c) {
+        panelTitle.textContent = m.name;
+        while (panelBody.firstChild) panelBody.removeChild(panelBody.firstChild);
+
+        // Kind & Cluster
+        const secMeta = document.createElement("div");
+        secMeta.className = "detail-section";
+        const metaLine = document.createElement("div");
+        metaLine.textContent = (m.kind ? m.kind.toUpperCase() : "CONCEPT") + " • " + (c ? c.title : "");
+        metaLine.style.color = "var(--text-muted)";
+        secMeta.appendChild(metaLine);
+
+        // Stats (Importance & Membership)
+        const statsLine = document.createElement("div");
+        statsLine.style.display = "flex";
+        statsLine.style.gap = "14px";
+        statsLine.style.marginTop = "4px";
+
+        const impSpan = document.createElement("span");
+        impSpan.textContent = "Importance: " + Math.round((m.imp || 0) * 100) + "%";
+        const memSpan = document.createElement("span");
+        memSpan.textContent = "Membership: " + Math.round((m.mem || 0) * 100) + "%";
+        statsLine.appendChild(impSpan);
+        statsLine.appendChild(memSpan);
+        secMeta.appendChild(statsLine);
+        panelBody.appendChild(secMeta);
+
+        // Sources
+        if (m.src && m.src.length > 0) {
+          const secSrc = document.createElement("div");
+          secSrc.className = "detail-section";
+          const stTitle = document.createElement("div");
+          stTitle.className = "sec-title";
+          stTitle.textContent = "Sources";
+          secSrc.appendChild(stTitle);
+          m.src.forEach(s => {
+            const sItem = document.createElement("div");
+            sItem.textContent = "• " + s;
+            secSrc.appendChild(sItem);
+          });
+          panelBody.appendChild(secSrc);
+        }
+
+        // Best Sentence
+        if (m.sent) {
+          const secSent = document.createElement("div");
+          secSent.className = "detail-section";
+          const stTitle = document.createElement("div");
+          stTitle.className = "sec-title";
+          stTitle.textContent = "Evidence Sentence";
+          secSent.appendChild(stTitle);
+          const sentP = document.createElement("div");
+          sentP.className = "detail-sentence";
+          sentP.textContent = m.sent;
+          secSent.appendChild(sentP);
+          panelBody.appendChild(secSent);
+        }
+
+        // Relations
+        if (m.rels && m.rels.length > 0) {
+          const secRel = document.createElement("div");
+          secRel.className = "detail-section";
+          const stTitle = document.createElement("div");
+          stTitle.className = "sec-title";
+          stTitle.textContent = "Top Relations";
+          secRel.appendChild(stTitle);
+
+          m.rels.forEach(r => {
+            const rItem = document.createElement("div");
+            rItem.className = "rel-item";
+            const rHead = document.createElement("div");
+            rHead.className = "rel-header";
+            rHead.textContent = r.r + " → " + r.t;
+            rItem.appendChild(rHead);
+            if (r.ev) {
+              const rEv = document.createElement("div");
+              rEv.className = "rel-evidence";
+              rEv.textContent = r.ev;
+              rItem.appendChild(rEv);
+            }
+            secRel.appendChild(rItem);
+          });
+          panelBody.appendChild(secRel);
+        }
+
+        detailPanel.style.display = "flex";
+      }
+
+      function renderClusterDetailPanel(c) {
+        panelTitle.textContent = c.title;
+        while (panelBody.firstChild) panelBody.removeChild(panelBody.firstChild);
+
+        // Cluster size and drawn count
+        const secMeta = document.createElement("div");
+        secMeta.className = "detail-section";
+        const nLine = document.createElement("div");
+        const extra = Math.max(0, c.n - c.drawn);
+        nLine.textContent = "Size: " + c.n + " concepts (" + c.drawn + " drawn" + (extra > 0 ? ", +" + extra + " more" : "") + ")";
+        secMeta.appendChild(nLine);
+        panelBody.appendChild(secMeta);
+
+        // Keywords
+        if (c.keywords && c.keywords.length > 0) {
+          const secKw = document.createElement("div");
+          secKw.className = "detail-section";
+          const stTitle = document.createElement("div");
+          stTitle.className = "sec-title";
+          stTitle.textContent = "Key Concepts";
+          secKw.appendChild(stTitle);
+          const kwP = document.createElement("div");
+          kwP.textContent = c.keywords.join(", ");
+          secKw.appendChild(kwP);
+          panelBody.appendChild(secKw);
+        }
+
+        // Source mix
+        if (c.sourceMix && Object.keys(c.sourceMix).length > 0) {
+          const secMix = document.createElement("div");
+          secMix.className = "detail-section";
+          const stTitle = document.createElement("div");
+          stTitle.className = "sec-title";
+          stTitle.textContent = "Source Distribution";
+          secMix.appendChild(stTitle);
+
+          const bar = document.createElement("div");
+          bar.className = "source-mix-bar";
+          const colors = ["#8b5cf6", "#3b8fd9", "#4cae4f", "#e8703a", "#e0a458"];
+          let colIdx = 0;
+          for (const [srcName, frac] of Object.entries(c.sourceMix)) {
+            const seg = document.createElement("div");
+            seg.className = "source-mix-seg";
+            seg.style.width = (frac * 100).toFixed(1) + "%";
+            seg.style.background = colors[colIdx % colors.length];
+            bar.appendChild(seg);
+
+            const labelRow = document.createElement("div");
+            labelRow.textContent = "• " + srcName + " (" + Math.round(frac * 100) + "%)";
+            labelRow.style.color = "var(--text-muted)";
+            labelRow.style.fontSize = "10px";
+            secMix.appendChild(labelRow);
+            colIdx++;
+          }
+          secMix.insertBefore(bar, secMix.childNodes[1]);
+          panelBody.appendChild(secMix);
+        }
+
+        // Top cluster links
+        const clusterLinks = links.filter(l => l.a === c.id || l.b === c.id);
+        if (clusterLinks.length > 0) {
+          const secL = document.createElement("div");
+          secL.className = "detail-section";
+          const stTitle = document.createElement("div");
+          stTitle.className = "sec-title";
+          stTitle.textContent = "Cluster Connections";
+          secL.appendChild(stTitle);
+
+          clusterLinks.slice(0, 5).forEach(l => {
+            const partnerId = (l.a === c.id ? l.b : l.a);
+            const partner = clusterMap.get(partnerId);
+            const lRow = document.createElement("div");
+            lRow.className = "rel-item";
+            const lHead = document.createElement("div");
+            lHead.className = "rel-header";
+            lHead.textContent = (partner ? partner.title : "Cluster " + partnerId) + " (" + (l.rel || "linked") + ")";
+            lRow.appendChild(lHead);
+            if (l.src && l.tgt) {
+              const lSub = document.createElement("div");
+              lSub.className = "rel-evidence";
+              lSub.textContent = l.src + " ↔ " + l.tgt + " (affinity " + l.w + ")";
+              lRow.appendChild(lSub);
+            }
+            secL.appendChild(lRow);
+          });
+          panelBody.appendChild(secL);
+        }
+
+        detailPanel.style.display = "flex";
+      }
+
+      panelCloseBtn.addEventListener("click", clearSelection);
+
+      // 8. Tooltip
+      function showTooltip(e, title, sub) {
+        while (tooltip.firstChild) tooltip.removeChild(tooltip.firstChild);
+        const t = document.createElement("div");
+        t.style.fontWeight = "600";
+        t.textContent = title;
+        tooltip.appendChild(t);
+        if (sub) {
+          const s = document.createElement("div");
+          s.style.color = "var(--text-muted)";
+          s.textContent = sub;
+          tooltip.appendChild(s);
+        }
+        tooltip.style.left = (e.clientX + 12) + "px";
+        tooltip.style.top = (e.clientY + 12) + "px";
+        tooltip.style.display = "block";
+      }
+
+      function hideTooltip() {
+        tooltip.style.display = "none";
+      }
+
+      // 9. Search Autocomplete
+      searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        while (searchDropdown.firstChild) searchDropdown.removeChild(searchDropdown.firstChild);
+
+        if (!query) {
+          searchDropdown.style.display = "none";
+          return;
+        }
+
+        const matches = [];
+        // Match hubs
+        clusters.forEach(c => {
+          if (c.title.toLowerCase().includes(query)) {
+            matches.push({ type: "hub", id: c.id, name: c.title, kind: "Cluster", x: c.x, y: c.y });
+          }
+        });
+        // Match members
+        members.forEach(m => {
+          if (m.name.toLowerCase().includes(query)) {
+            matches.push({ type: "member", id: m.id, name: m.name, kind: m.kind, x: m.x, y: m.y });
+          }
+        });
+
+        const topMatches = matches.slice(0, 8);
+        if (topMatches.length === 0) {
+          searchDropdown.style.display = "none";
+          return;
+        }
+
+        topMatches.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "search-item";
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = truncateText(item.name, 24);
+          div.appendChild(nameSpan);
+
+          const badge = document.createElement("span");
+          badge.className = "kind-badge";
+          badge.textContent = item.kind;
+          div.appendChild(badge);
+
+          div.addEventListener("click", () => {
+            searchDropdown.style.display = "none";
+            searchInput.value = item.name;
+            flyToNode(item.x, item.y);
+            if (item.type === "hub") {
+              selectHub(item.id);
+            } else {
+              selectMember(item.id);
+            }
+          });
+          searchDropdown.appendChild(div);
+        });
+
+        searchDropdown.style.display = "block";
+      });
+
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const first = searchDropdown.querySelector(".search-item");
+          if (first) first.click();
+        } else if (e.key === "Escape") {
+          searchDropdown.style.display = "none";
+          searchInput.blur();
+        }
+      });
+
+      // 10. Pointer Events (Pan & Pinch)
+      const activePointers = new Map();
+      let isDragging = false;
+      let lastDragX = 0, lastDragY = 0;
+      let initialPinchDist = null;
+      let initialPinchK = 1.0;
+
+      svg.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        svg.setPointerCapture(e.pointerId);
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (activePointers.size === 1) {
+          isDragging = true;
+          lastDragX = e.clientX;
+          lastDragY = e.clientY;
+        } else if (activePointers.size === 2) {
+          isDragging = false;
+          const pts = Array.from(activePointers.values());
+          initialPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          initialPinchK = curK;
+        }
+      });
+
+      svg.addEventListener("pointermove", (e) => {
+        if (!activePointers.has(e.pointerId)) return;
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (activePointers.size === 1 && isDragging) {
+          const dx = e.clientX - lastDragX;
+          const dy = e.clientY - lastDragY;
+          lastDragX = e.clientX;
+          lastDragY = e.clientY;
+          curX += dx;
+          curY += dy;
+          requestTransformUpdate();
+        } else if (activePointers.size === 2 && initialPinchDist) {
+          const pts = Array.from(activePointers.values());
+          const curDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          const factor = curDist / Math.max(1, initialPinchDist);
+          const newK = Math.min(maxK, Math.max(minK, initialPinchK * factor));
+
+          const midX = (pts[0].x + pts[1].x) / 2;
+          const midY = (pts[0].y + pts[1].y) / 2;
+          curX = midX - (midX - curX) * (newK / curK);
+          curY = midY - (midY - curY) * (newK / curK);
+          curK = newK;
+          requestTransformUpdate();
+        }
+      });
+
+      function endPointer(e) {
+        if (activePointers.has(e.pointerId)) {
+          activePointers.delete(e.pointerId);
+          try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+        }
+        if (activePointers.size === 0) {
+          isDragging = false;
+          initialPinchDist = null;
+        } else if (activePointers.size === 1) {
+          const remaining = Array.from(activePointers.values())[0];
+          lastDragX = remaining.x;
+          lastDragY = remaining.y;
+          isDragging = true;
+          initialPinchDist = null;
+        }
+      }
+
+      svg.addEventListener("pointerup", endPointer);
+      svg.addEventListener("pointercancel", endPointer);
+
+      // Wheel Zoom
+      svg.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const factor = Math.exp(-e.deltaY * 0.0018);
+        const newK = Math.min(maxK, Math.max(minK, curK * factor));
+        const mx = e.clientX;
+        const my = e.clientY;
+        curX = mx - (mx - curX) * (newK / curK);
+        curY = my - (my - curY) * (newK / curK);
+        curK = newK;
+        requestTransformUpdate();
+      }, { passive: false });
+
+      // Double Click Zoom
+      svg.addEventListener("dblclick", (e) => {
+        e.preventDefault();
+        const newK = Math.min(maxK, curK * 2.0);
+        const mx = e.clientX;
+        const my = e.clientY;
+        const targetX = mx - (mx - curX) * (newK / curK);
+        const targetY = my - (my - curY) * (newK / curK);
+        flyTo(targetX, targetY, newK, 260);
+      });
+
+      // Click Background to Clear Selection
+      svg.addEventListener("click", (e) => {
+        if (e.target === svg || e.target.id === "viewport") {
+          clearSelection();
+          searchDropdown.style.display = "none";
+        }
+      });
+
+      // Controls
+      document.getElementById("btn-zoom-in").addEventListener("click", () => {
+        const vw = window.innerWidth / 2;
+        const vh = window.innerHeight / 2;
+        const newK = Math.min(maxK, curK * 1.35);
+        flyTo(vw - (vw - curX) * (newK / curK), vh - (vh - curY) * (newK / curK), newK, 200);
+      });
+
+      document.getElementById("btn-zoom-out").addEventListener("click", () => {
+        const vw = window.innerWidth / 2;
+        const vh = window.innerHeight / 2;
+        const newK = Math.max(minK, curK / 1.35);
+        flyTo(vw - (vw - curX) * (newK / curK), vh - (vh - curY) * (newK / curK), newK, 200);
+      });
+
+      document.getElementById("btn-zoom-reset").addEventListener("click", () => {
+        calcFitTransform();
+        flyTo(curX, curY, curK, 350);
+      });
+
+      // Legend Toggle
+      const legendToggle = document.getElementById("legend-toggle");
+      const legendPanel = document.getElementById("legend-panel");
+      legendToggle.addEventListener("click", () => {
+        legendPanel.style.display = (legendPanel.style.display === "flex" ? "none" : "flex");
+      });
+
+      // Minimap Interaction (Click/Drag to Recenter)
+      function onMinimapClick(e) {
+        const rect = minimapSvg.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const ms = minimapSvg._scale || 0.1;
+        const offX = minimapSvg._offX || 0;
+        const offY = minimapSvg._offY || 0;
+
+        const worldX = mapBounds.minX + (mx - offX) / ms;
+        const worldY = mapBounds.minY + (my - offY) / ms;
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const targetX = vw / 2 - worldX * curK;
+        const targetY = vh / 2 - worldY * curK;
+        flyTo(targetX, targetY, curK, 250);
+      }
+
+      minimapSvg.addEventListener("click", onMinimapClick);
+
+      // Keyboard Shortcuts
+      window.addEventListener("keydown", (e) => {
+        if (e.target === searchInput) return;
+        if (e.key === "+" || e.key === "=") {
+          document.getElementById("btn-zoom-in").click();
+        } else if (e.key === "-" || e.key === "_") {
+          document.getElementById("btn-zoom-out").click();
+        } else if (e.key === "0") {
+          document.getElementById("btn-zoom-reset").click();
+        } else if (e.key === "Escape") {
+          clearSelection();
+          searchDropdown.style.display = "none";
+          legendPanel.style.display = "none";
+        }
+      });
+
+      // Window Resize
+      window.addEventListener("resize", () => {
+        calcFitTransform();
+        setupMinimap();
+        requestTransformUpdate();
+      });
+
+      // 11. Initialization
+      calcFitTransform();
+      setupMinimap();
+      applyTransform();
+    })();
+  </script>
+</body>
+</html>

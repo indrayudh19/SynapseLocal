@@ -19,33 +19,41 @@ from representation.concept_schema import (
     MIN_CHARS,
     MAX_CONCEPTS,
     MAX_RELATIONS,
+    KINDS,
     Extraction,
 )
 
 SYSTEM_PROMPT = """You extract a concept map from study notes. Output JSON only.
 Rules:
-1. concepts: key technical terms from the TEXT, each 1-4 words, noun phrases, at most 8.
-   Prefer terms that are defined, categorized, or contrasted in the text.
-   Never output author names, citations, numbers, section names, or generic words
-   (paper, method, results, approach, model, figure, table).
-2. relations: only between concepts you listed, at most 8. Allowed values:
-   - type_of:    A is a kind/subtype of B
-   - part_of:    A is a component of B
-   - example_of: A is an instance of B
-   - uses:       A uses or depends on B
-   - related_to: A is closely related to B (only if none of the above fits)
-3. For type_of, part_of, example_of the source is ALWAYS the narrower/smaller concept.
-4. Use only information stated in the TEXT."""
+1. concepts: key technical terms from the TEXT, at most 8, each a noun phrase of 1-4 words.
+   - Use the singular, most general form (microservice, not microservices architecture).
+   - If the text gives an acronym and its expansion, output the expansion only.
+   - Never output a modifier alone (end-to-end, general, technical), author names, citations,
+     numbers, section names, or generic words (paper, method, results, approach, model, system).
+   - Prefer terms that are defined, categorized, or contrasted in the text.
+2. kind of each concept:
+   - category:  an umbrella idea that has types or members (infrastructure, database)
+   - component: a part or piece of something (layer, index)
+   - practice:  a technique, process or activity (CI/CD, indexing)
+   - attribute: a quality or property (scalability, resilience)
+   - example:   a specific instance, product or use case (PostgreSQL, banking system)
+3. main_topic: the one concept from your list that this TEXT is mainly about.
+4. relations: only between concepts you listed, at most 8. Allowed values:
+   type_of (A is a kind of B), part_of (A is a component of B), example_of (A is an instance of B),
+   uses (A uses or depends on B), related_to (only if none of the others fits).
+   For type_of, part_of, example_of the source is ALWAYS the narrower/smaller concept.
+5. Use only information stated in the TEXT."""
 
 FEW_SHOT_USER = "TEXT: Relational databases store data in tables. PostgreSQL and MySQL are popular examples. Indexes speed up queries on a table."
 FEW_SHOT_ASSISTANT = json.dumps({
+    "main_topic": "relational database",
     "concepts": [
-        {"name": "relational database"},
-        {"name": "table"},
-        {"name": "PostgreSQL"},
-        {"name": "MySQL"},
-        {"name": "index"},
-        {"name": "query"},
+        {"name": "relational database", "kind": "category"},
+        {"name": "table", "kind": "component"},
+        {"name": "PostgreSQL", "kind": "example"},
+        {"name": "MySQL", "kind": "example"},
+        {"name": "index", "kind": "component"},
+        {"name": "query", "kind": "practice"},
     ],
     "relations": [
         {"source": "PostgreSQL", "relation": "example_of", "target": "relational database"},
@@ -67,6 +75,7 @@ STOPWORDS = {
 }
 
 REF_REGEX = re.compile(r'et al\.|arXiv|pp\.|\b(19|20)\d{2}\b.*\.$|doi', re.IGNORECASE)
+SENTENCE_SPLIT = re.compile(r'(?<=[.!?])\s+')
 
 
 def _truncate_sentence_boundary(text: str, max_chars: int) -> str:
@@ -134,6 +143,49 @@ def _is_grounded_concept(concept_name: str, chunk_text_lower: str) -> bool:
     return False
 
 
+def _find_best_evidence(chunk_text: str, source_name: str, target_name: str, max_chars: int = 200) -> str:
+    """Find the best evidence sentence for a relation (deterministic, no LLM).
+    Split into sentences, pick the one with highest token overlap with both endpoints.
+    Fall back to best for either endpoint. Truncate to max_chars."""
+    sentences = SENTENCE_SPLIT.split(chunk_text.strip())
+    if not sentences:
+        return ""
+    
+    src_tokens = set(re.findall(r'\b\w+\b', source_name.lower())) - STOPWORDS
+    tgt_tokens = set(re.findall(r'\b\w+\b', target_name.lower())) - STOPWORDS
+    both_tokens = src_tokens | tgt_tokens
+    
+    best_sent = ""
+    best_score = -1
+    best_either = ""
+    best_either_score = -1
+    
+    for sent in sentences:
+        sent_lower = sent.lower()
+        sent_tokens = set(re.findall(r'\b\w+\b', sent_lower))
+        
+        # Score: overlap with both endpoints
+        overlap_both = len(both_tokens & sent_tokens)
+        has_src = bool(src_tokens & sent_tokens)
+        has_tgt = bool(tgt_tokens & sent_tokens)
+        
+        if has_src and has_tgt:
+            if overlap_both > best_score:
+                best_score = overlap_both
+                best_sent = sent
+        
+        # Track best for either endpoint
+        overlap_either = len(both_tokens & sent_tokens)
+        if overlap_either > best_either_score:
+            best_either_score = overlap_either
+            best_either = sent
+    
+    result = best_sent if best_sent else best_either
+    if len(result) > max_chars:
+        result = result[:max_chars].rsplit(" ", 1)[0] + "…"
+    return result.strip()
+
+
 def run(
     session_id: str,
     max_chunks: Optional[int] = None,
@@ -188,6 +240,8 @@ def run(
     with rep_paths.session_lock(session_id):
         # 1. Read chunks and aggregate into parent chunks
         parent_map: Dict[str, dict] = {}
+        chunk_order: Dict[str, int] = {}  # parent_id -> order index
+        order_counter = 0
         with open(chunks_file, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -201,8 +255,11 @@ def run(
                         "chunk_id": c.get("id", pid),
                         "source_file": c.get("source_file", ""),
                         "source_type": c.get("source_type", ""),
+                        "title": c.get("heading", ""),
                         "texts": [],
                     }
+                    chunk_order[pid] = order_counter
+                    order_counter += 1
                 parent_map[pid]["texts"].append(c.get("text", ""))
 
         # 2. Filter boilerplate and truncate
@@ -221,6 +278,8 @@ def run(
                 "chunk_id": pdata["chunk_id"],
                 "source_file": pdata["source_file"],
                 "source_type": pdata["source_type"],
+                "title": pdata["title"],
+                "order": chunk_order[pid],
                 "text": trunc_text,
             })
 
@@ -235,6 +294,8 @@ def run(
         relations_kept = 0
         relations_dropped = 0
         failed = 0
+        main_topic_nulls = 0
+        kind_dist: Dict[str, int] = {k: 0 for k in KINDS}
 
         # Read checkpoint if exists
         if os.path.exists(raw_path):
@@ -252,6 +313,12 @@ def run(
                         relations_kept += len(r_list)
                         if rec.get("status") == "failed":
                             failed += 1
+                        if rec.get("main_topic") is None:
+                            main_topic_nulls += 1
+                        for c in c_list:
+                            k = c.get("kind", "")
+                            if k in kind_dist:
+                                kind_dist[k] += 1
             except Exception:
                 processed_chunk_ids.clear()
                 with open(raw_path, "w", encoding="utf-8") as f:
@@ -276,12 +343,20 @@ def run(
                 t0 = time.time()
                 chunk_text = chunk["text"]
                 chunk_text_lower = chunk_text.lower()
+                chunk_title = chunk.get("title", "")
+
+                # Build user message: optionally prepend section title
+                user_content = ""
+                if chunk_title:
+                    user_content = f"[SECTION: {chunk_title}]\nTEXT: {chunk_text}"
+                else:
+                    user_content = f"TEXT: {chunk_text}"
 
                 msgs = [
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": FEW_SHOT_USER},
                     {"role": "assistant", "content": FEW_SHOT_ASSISTANT},
-                    {"role": "user", "content": f"TEXT: {chunk_text}"},
+                    {"role": "user", "content": user_content},
                 ]
 
                 parsed: Optional[Extraction] = None
@@ -317,14 +392,18 @@ def run(
                     record = {
                         "chunk_id": cid,
                         "parent_id": chunk["parent_id"],
+                        "order": chunk["order"],
+                        "title": chunk_title,
                         "source_file": chunk["source_file"],
                         "source_type": chunk["source_type"],
                         "status": "failed",
+                        "main_topic": None,
                         "concepts": [],
                         "relations": [],
                     }
                     out_f.write(json.dumps(record) + "\n")
                     out_f.flush()
+                    main_topic_nulls += 1
 
                     if consecutive_failures >= 5:
                         # Abort after 5 consecutive failures
@@ -341,27 +420,54 @@ def run(
                 consecutive_failures = 0
 
                 # Grounding validation
-                valid_concepts_map: Dict[str, str] = {}  # norm -> original display name
+                valid_concepts_map: Dict[str, dict] = {}  # norm -> {"name": display, "kind": kind}
                 for c in parsed.concepts:
                     c_name = c.name.strip()
+                    c_kind = c.kind if c.kind in KINDS else "category"
                     if _is_grounded_concept(c_name, chunk_text_lower):
-                        valid_concepts_map[c_name.lower()] = c_name
+                        valid_concepts_map[c_name.lower()] = {"name": c_name, "kind": c_kind}
                     else:
                         concepts_dropped += 1
 
                 kept_c_names = set(valid_concepts_map.keys())
-                kept_concepts = [{"name": name} for name in valid_concepts_map.values()]
+                kept_concepts = [{"name": v["name"], "kind": v["kind"]} for v in valid_concepts_map.values()]
                 concepts_kept += len(kept_concepts)
+
+                # Track kind distribution
+                for c in kept_concepts:
+                    k = c.get("kind", "")
+                    if k in kind_dist:
+                        kind_dist[k] += 1
+
+                # Validate main_topic
+                raw_main_topic = (parsed.main_topic or "").strip()
+                main_topic = None
+                if raw_main_topic:
+                    mt_norm = raw_main_topic.lower()
+                    if mt_norm in kept_c_names:
+                        main_topic = valid_concepts_map[mt_norm]["name"]
+                    else:
+                        main_topic = None
+                
+                if main_topic is None:
+                    main_topic_nulls += 1
 
                 kept_relations = []
                 for r in parsed.relations:
                     s_norm = r.source.strip().lower()
                     t_norm = r.target.strip().lower()
                     if s_norm in kept_c_names and t_norm in kept_c_names and s_norm != t_norm:
+                        # Compute evidence
+                        evidence = _find_best_evidence(
+                            chunk_text,
+                            valid_concepts_map[s_norm]["name"],
+                            valid_concepts_map[t_norm]["name"],
+                        )
                         kept_relations.append({
-                            "source": valid_concepts_map[s_norm],
+                            "source": valid_concepts_map[s_norm]["name"],
                             "relation": r.relation,
-                            "target": valid_concepts_map[t_norm],
+                            "target": valid_concepts_map[t_norm]["name"],
+                            "evidence": evidence,
                         })
                     else:
                         relations_dropped += 1
@@ -370,9 +476,12 @@ def run(
                 record = {
                     "chunk_id": cid,
                     "parent_id": chunk["parent_id"],
+                    "order": chunk["order"],
+                    "title": chunk_title,
                     "source_file": chunk["source_file"],
                     "source_type": chunk["source_type"],
                     "status": "ok",
+                    "main_topic": main_topic,
                     "concepts": kept_concepts,
                     "relations": kept_relations,
                 }
@@ -404,6 +513,8 @@ def run(
             "concepts_dropped": concepts_dropped,
             "relations_kept": relations_kept,
             "relations_dropped": relations_dropped,
+            "main_topic_nulls": main_topic_nulls,
+            "kind_distribution": kind_dist,
         }
 
         with open(log_path, "w", encoding="utf-8") as f:

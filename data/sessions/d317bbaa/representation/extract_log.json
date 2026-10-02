@@ -1,0 +1,20 @@
+{
+  "status": "ok",
+  "chunks_total": 58,
+  "processed": 31,
+  "skipped_boilerplate": 23,
+  "failed": 0,
+  "avg_seconds_per_chunk": 6.19,
+  "concepts_kept": 221,
+  "concepts_dropped": 4,
+  "relations_kept": 148,
+  "relations_dropped": 51,
+  "main_topic_nulls": 5,
+  "kind_distribution": {
+    "category": 31,
+    "component": 19,
+    "practice": 77,
+    "attribute": 25,
+    "example": 69
+  }
+}

@@ -55,24 +55,7 @@ def embed_hash_path(session_id: str) -> str:
     return os.path.join(session_dir(session_id), "embed.hash")
 
 
-def graph_edges_path(session_id: str) -> str:
-    """Path to data/sessions/<session_id>/representation/graph_edges.npz"""
-    return os.path.join(representation_dir(session_id), "graph_edges.npz")
 
-
-def graph_meta_path(session_id: str) -> str:
-    """Path to data/sessions/<session_id>/representation/graph_meta.json"""
-    return os.path.join(representation_dir(session_id), "graph_meta.json")
-
-
-def graph_png_path(session_id: str) -> str:
-    """Path to data/sessions/<session_id>/representation/graph.png"""
-    return os.path.join(representation_dir(session_id), "graph.png")
-
-
-def graph_hash_path(session_id: str) -> str:
-    """Path to data/sessions/<session_id>/representation/graph.hash"""
-    return os.path.join(representation_dir(session_id), "graph.hash")
 
 
 def clusters_json_path(session_id: str) -> str:
@@ -152,4 +135,19 @@ def concept_clusters_hash_path(session_id: str) -> str:
 def concept_map_path(session_id: str) -> str:
     """Path to data/sessions/<session_id>/representation/concept_map.png"""
     return os.path.join(representation_dir(session_id), "concept_map.png")
+
+
+def concept_vectors_path(session_id: str) -> str:
+    """Path to data/sessions/<session_id>/representation/concept_vectors.npy"""
+    return os.path.join(representation_dir(session_id), "concept_vectors.npy")
+
+
+def concept_map_html_path(session_id: str) -> str:
+    """Path to data/sessions/<session_id>/representation/concept_map.html"""
+    return os.path.join(representation_dir(session_id), "concept_map.html")
+
+
+def concept_map_hash_path(session_id: str) -> str:
+    """Path to data/sessions/<session_id>/representation/concept_map.hash"""
+    return os.path.join(representation_dir(session_id), "concept_map.hash")
 

@@ -12,10 +12,10 @@ from backend.vector_store import LocalVectorStore
 from backend.local_llm import get_embedding_dim
 from representation import paths as rep_paths
 from representation import embed_store
-from representation import graph as rep_graph
 from representation import cluster as rep_cluster
 from representation import extract_concepts as rep_extract
 from representation import build_concept_graph as rep_graph_build
+from representation import map_layout as rep_map_layout
 
 # ---------------------------------------------------------
 # Page Configuration
@@ -205,7 +205,7 @@ if "is_processed" not in st.session_state:
 # ---------------------------------------------------------
 with st.sidebar:
     st.markdown("### SYNAPSE LOCAL")
-    st.caption("Private Knowledge Graph & Hybrid RAG Engine")
+    st.caption("Private Concept Map & Hybrid RAG Engine")
     st.markdown("---")
 
     # ── Session Management ────────────────────────────────
@@ -323,55 +323,16 @@ with st.sidebar:
                     )
                     st.rerun()
 
-    # Sequential run in order button (embed_store -> graph -> cluster)
-    run_all_btn = st.button(
-        "Run Pipeline (1 -> 2 -> 3)",
-        help="Executes embed_store, then graph, then cluster, strictly one at a time to full completion."
-    )
-    if run_all_btn:
-        if not sid:
-            st.error("Create or select a session first.")
-        else:
-            if uploaded_files:
-                save_uploaded_files(sid, uploaded_files)
-            
-            with st.spinner("Stage 1/3: Running embed_store..."):
-                r1 = embed_store.run(sid)
-            if r1.get("status") == "error":
-                st.error(f"Stage 1 failed: {r1.get('message')}")
-            else:
-                st.session_state.is_processed = True
-                with st.spinner("Stage 2/3: Running knowledge graph..."):
-                    r2 = rep_graph.run(sid)
-                if r2.get("status") == "error":
-                    st.error(f"Stage 2 failed: {r2.get('message')}")
-                else:
-                    with st.spinner("Stage 3/3: Running clustering..."):
-                        r3 = rep_cluster.run(sid)
-                    if r3.get("status") == "error":
-                        st.error(f"Stage 3 failed: {r3.get('message')}")
-                    else:
-                        st.success("All 3 stages executed to completion in strict sequence!")
-                        st.rerun()
-
     st.markdown("---")
     st.markdown("#### System Status")
     
     stage1_status = "Built" if has_stage1 else "Not built"
     stage1_color = "#00ff66" if has_stage1 else "#9ca3af"
 
-    has_graph = bool(
-        sid
-        and os.path.exists(rep_paths.graph_png_path(sid))
-        and os.path.exists(rep_paths.graph_meta_path(sid))
-    )
-    graph_status = "Built" if has_graph else "Not built"
-    graph_color = "#00ff66" if has_graph else "#9ca3af"
-
     has_cluster = bool(
         sid
-        and os.path.exists(rep_paths.cluster_map_png_path(sid))
-        and os.path.exists(rep_paths.clusters_json_path(sid))
+        and os.path.exists(rep_paths.concept_map_path(sid))
+        and os.path.exists(rep_paths.concept_clusters_path(sid))
     )
     cluster_status = "Built" if has_cluster else "Not built"
     cluster_color = "#00ff66" if has_cluster else "#9ca3af"
@@ -382,8 +343,7 @@ with st.sidebar:
             <div class="system-card-title">Storage Status</div>
             <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #f3f4f6; margin-top: 6px; line-height: 1.6;">
                 <div>Stage 1 (Embed + Store): <span style="color:{stage1_color}; font-weight:600;">{stage1_status}</span></div>
-                <div>Stage 2 (Knowledge Graph): <span style="color:{graph_color}; font-weight:600;">{graph_status}</span></div>
-                <div>Stage 3 (Cluster Map): <span style="color:{cluster_color}; font-weight:600;">{cluster_status}</span></div>
+                <div>Concept Map: <span style="color:{cluster_color}; font-weight:600;">{cluster_status}</span></div>
             </div>
         </div>
         """,
@@ -421,9 +381,8 @@ st.markdown("---")
 # ---------------------------------------------------------
 # Main Tabs
 # ---------------------------------------------------------
-tab_chat, tab_graph, tab_cluster = st.tabs([
+tab_chat, tab_cluster = st.tabs([
     "Local RAG Chat",
-    "Interactive Knowledge Graph",
     "Concept Clusters"
 ])
 
@@ -525,122 +484,11 @@ with tab_chat:
 
 
 # ---------------------------------------------------------
-# Tab 2: Knowledge Graph
-# ---------------------------------------------------------
-with tab_graph:
-    st.markdown("### Semantic Knowledge Graph")
-    st.caption("kNN semantic network with Louvain communities and PageRank centrality.")
-
-    sid = st.session_state.session_id
-    if not sid:
-        st.info("Create or select a session to view the knowledge graph.")
-    else:
-        has_stage1 = (
-            os.path.exists(rep_paths.embeddings_path(sid))
-            and os.path.exists(rep_paths.chunks_jsonl_path(sid))
-        )
-        graph_png = rep_paths.graph_png_path(sid)
-        graph_meta = rep_paths.graph_meta_path(sid)
-        graph_built = os.path.exists(graph_png) and os.path.exists(graph_meta)
-
-        status_txt = "Built" if graph_built else "Not built"
-        status_col = "#00ff66" if graph_built else "#9ca3af"
-
-        col_gb1, col_gb2 = st.columns([3, 1])
-        with col_gb1:
-            st.markdown(
-                f"<div style='font-family:JetBrains Mono,monospace;font-size:0.85rem;margin-bottom:12px;'>"
-                f"Graph Status: <span style='color:{status_col};font-weight:600;'>{status_txt}</span></div>",
-                unsafe_allow_html=True
-            )
-
-        btn_cols = st.columns([2, 1, 3])
-        with btn_cols[0]:
-            build_label = "Rebuild Graph" if graph_built else "Build Knowledge Graph"
-            build_graph_btn = st.button(
-                build_label,
-                disabled=not has_stage1,
-                help="Requires Stage 1 artifacts" if not has_stage1 else "Construct and render semantic knowledge graph"
-            )
-
-        if not has_stage1:
-            st.warning("Stage 1 artifacts missing. Run 'Stage 1: Embed & Store' first.")
-
-        if build_graph_btn:
-            if graph_built and os.path.exists(rep_paths.graph_hash_path(sid)):
-                try:
-                    os.remove(rep_paths.graph_hash_path(sid))
-                except OSError:
-                    pass
-            with st.spinner("Building Knowledge Graph (kNN + Louvain + PageRank)..."):
-                res = rep_graph.run(sid)
-                if res.get("status") == "error":
-                    st.error(res.get("message", "Graph construction failed."))
-                else:
-                    cached_tag = " (from cache)" if res.get("cached") else ""
-                    st.success(f"Knowledge Graph ready{cached_tag}!")
-                    st.rerun()
-
-        # Display saved artifacts if available
-        if graph_built:
-            try:
-                import json
-                with open(graph_meta, "r", encoding="utf-8") as mf:
-                    meta_data = json.load(mf)
-
-                g_stats = meta_data.get("global", {})
-                st.markdown(
-                    f"""
-                    <div style="display:flex; flex-wrap:wrap; gap:12px; margin: 12px 0 16px 0; font-family:'JetBrains Mono',monospace; font-size:0.85rem;">
-                        <span class="badge-mono badge-green">Nodes: {g_stats.get('nodes', 0)}</span>
-                        <span class="badge-mono badge-purple">Edges: {g_stats.get('edges', 0)}</span>
-                        <span class="badge-mono badge-purple">Communities: {g_stats.get('communities', 0)}</span>
-                        <span class="badge-mono">Density: {g_stats.get('density', 0):.4f}</span>
-                        <span class="badge-mono">Threshold Tau: {g_stats.get('threshold_tau', 0):.4f}</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                st.image(graph_png, use_container_width=True)
-
-                col_t1, col_t2 = st.columns([3, 2])
-                with col_t1:
-                    st.markdown("#### Top Nodes by PageRank")
-                    nodes_list = meta_data.get("nodes", [])
-                    sorted_nodes = sorted(nodes_list, key=lambda x: x.get("pagerank", 0.0), reverse=True)[:10]
-                    if sorted_nodes:
-                        df_nodes = pd.DataFrame([{
-                            "ID": n.get("id"),
-                            "Snippet": n.get("text_snippet", ""),
-                            "Source": n.get("source_file"),
-                            "Type": n.get("source_type"),
-                            "PageRank": f"{n.get('pagerank', 0.0):.5f}",
-                            "Cross-Ratio": f"{n.get('cross_source_ratio', 0.0):.2f}",
-                        } for n in sorted_nodes])
-                        st.dataframe(df_nodes, use_container_width=True, hide_index=True)
-
-                with col_t2:
-                    st.markdown("#### Louvain Communities")
-                    comms_list = meta_data.get("communities", [])
-                    if comms_list:
-                        df_comm = pd.DataFrame([{
-                            "Community": f"#{c.get('community')}",
-                            "Top Terms": c.get("label"),
-                            "Size": c.get("size"),
-                            "Sources": ", ".join(c.get("sources", [])),
-                        } for c in comms_list])
-                        st.dataframe(df_comm, use_container_width=True, hide_index=True)
-            except Exception as e:
-                st.error(f"Error displaying graph artifacts: {str(e)}")
-
-
-# ---------------------------------------------------------
-# Tab 3: Semantic Cluster Map
+# Tab 2: Concept Clusters
 # ---------------------------------------------------------
 with tab_cluster:
     st.markdown("### Concept Clusters")
-    st.caption("LLM-powered concept extraction (Qwen 2.5 3B), graph consolidation, and hub-and-spoke community mapping.")
+    st.caption("LLM-powered concept extraction (Qwen 2.5 3B), embedding-assisted consolidation with optional Qwen merge judge, and hub-and-spoke community mapping.")
 
     sid = st.session_state.session_id
     if not sid:
@@ -651,14 +499,26 @@ with tab_cluster:
 
         raw_jsonl = rep_paths.concepts_raw_path(sid)
         extract_log = rep_paths.extract_log_path(sid)
-        has_stage1 = os.path.exists(raw_jsonl)
+        has_stage1_concepts = os.path.exists(raw_jsonl)
 
         concept_graph = rep_paths.concept_graph_path(sid)
         has_stage2 = os.path.exists(concept_graph)
 
         clusters_json = rep_paths.concept_clusters_path(sid)
         clusters_png = rep_paths.concept_map_path(sid)
+        clusters_html = rep_paths.concept_map_html_path(sid)
         has_stage3 = os.path.exists(clusters_json)
+        has_stage4_html = os.path.exists(clusters_html)
+
+        stage3_ok = False
+        if has_stage3:
+            try:
+                import json
+                with open(clusters_json, "r", encoding="utf-8") as jf:
+                    c_peek = json.load(jf)
+                stage3_ok = (c_peek.get("status") == "ok")
+            except Exception:
+                stage3_ok = False
 
         # Count total eligible parent chunks for default sample
         total_p_chunks = 0
@@ -676,23 +536,25 @@ with tab_cluster:
                 total_p_chunks = 20
 
         # Status row
-        s1_color = "#00ff66" if has_stage1 else "#9ca3af"
+        s1_color = "#00ff66" if has_stage1_concepts else "#9ca3af"
         s2_color = "#00ff66" if has_stage2 else "#9ca3af"
         s3_color = "#00ff66" if has_stage3 else "#9ca3af"
+        s4_color = "#00ff66" if has_stage4_html else "#9ca3af"
 
         st.markdown(
             f"""
-            <div style='display:flex; gap:16px; font-family:JetBrains Mono,monospace; font-size:0.85rem; margin-bottom:14px;'>
-                <span>Stage 1 (Extracted): <b style='color:{s1_color};'>{'Ready' if has_stage1 else 'Pending'}</b></span>
+            <div style='display:flex; flex-wrap:wrap; gap:16px; font-family:JetBrains Mono,monospace; font-size:0.85rem; margin-bottom:14px;'>
+                <span>Stage 1 (Extracted): <b style='color:{s1_color};'>{'Ready' if has_stage1_concepts else 'Pending'}</b></span>
                 <span>Stage 2 (Consolidated): <b style='color:{s2_color};'>{'Ready' if has_stage2 else 'Pending'}</b></span>
                 <span>Stage 3 (Clustered): <b style='color:{s3_color};'>{'Ready' if has_stage3 else 'Pending'}</b></span>
+                <span>Stage 4 (Interactive Map): <b style='color:{s4_color};'>{'Ready' if has_stage4_html else 'Pending'}</b></span>
             </div>
             """,
             unsafe_allow_html=True
         )
 
         st.markdown("#### Execution Pipeline")
-        col_c1, col_c2, col_c3 = st.columns(3)
+        col_c1, col_c2, col_c3, col_c4 = st.columns(4)
 
         with col_c1:
             st.markdown("**Step 1: Extract Concepts (Qwen)**")
@@ -763,10 +625,10 @@ with tab_cluster:
 
         with col_c2:
             st.markdown("**Step 2: Consolidate Graph**")
-            st.caption("Normalize terms, resolve acronyms, merge fuzzy keys & filter global topics.")
+            st.caption("Embedding-assisted duplicate detection + optional Qwen merge judge. Normalizes terms, resolves acronyms, merges fuzzy & semantic duplicates.")
             consolidate_btn = st.button(
                 "2. Consolidate",
-                disabled=not has_stage1,
+                disabled=not has_stage1_concepts,
                 help="Requires Stage 1 concepts_raw.jsonl"
             )
             if consolidate_btn:
@@ -775,17 +637,23 @@ with tab_cluster:
                         os.remove(rep_paths.concept_graph_hash_path(sid))
                     except OSError:
                         pass
-                with st.spinner("Consolidating concepts & typing relations..."):
+                with st.spinner("Consolidating concepts (embedding model + optional Qwen merge judge)..."):
                     res = rep_graph_build.run(sid)
                     if res.get("status") == "error":
                         st.error(res.get("message", "Consolidation failed."))
                     else:
-                        st.success(f"Graph consolidated! ({res.get('n_concepts', 0)} concepts, {res.get('n_relations', 0)} relations)")
+                        merged_lex = res.get('n_merged_lexical', 0)
+                        merged_emb = res.get('n_merged_embedding', 0)
+                        n_judged = res.get('n_judged', 0)
+                        st.success(
+                            f"Graph consolidated! ({res.get('n_concepts', 0)} concepts, {res.get('n_relations', 0)} relations, "
+                            f"{merged_lex} lexical merges, {merged_emb} embedding merges, {n_judged} judged)"
+                        )
                         st.rerun()
 
         with col_c3:
             st.markdown("**Step 3: Cluster & Render**")
-            st.caption("Community detection (Louvain), hub discovery, and hub-and-spoke map.")
+            st.caption("Multi-signal affinity, Louvain community detection, PageRank hub ranking, MDS layout.")
             cluster_btn = st.button(
                 "3. Build concept map",
                 disabled=not has_stage2,
@@ -807,6 +675,30 @@ with tab_cluster:
                         st.success("Concept map rendered!")
                         st.rerun()
 
+        with col_c4:
+            st.markdown("**Step 4: Interactive Map**")
+            st.caption("Precomputed layout with semantic zoom, pan/zoom SVG, and member detail inspection.")
+            map_btn = st.button(
+                "4. Build interactive map",
+                disabled=not stage3_ok,
+                help="Requires Stage 3 concept_clusters.json with status ok"
+            )
+            if map_btn:
+                if os.path.exists(rep_paths.concept_map_hash_path(sid)):
+                    try:
+                        os.remove(rep_paths.concept_map_hash_path(sid))
+                    except OSError:
+                        pass
+                with st.spinner("Generating interactive concept map..."):
+                    res = rep_map_layout.run(sid)
+                    if res.get("status") == "error":
+                        st.error(res.get("message", "Interactive map generation failed."))
+                    elif res.get("status") != "ok":
+                        st.warning(f"Interactive map status: {res.get('status')}")
+                    else:
+                        st.success(f"Interactive map generated! ({res.get('html_kb', 0)} KB)")
+                        st.rerun()
+
         st.markdown("---")
 
         # Display Stage 3 results if available
@@ -825,22 +717,46 @@ with tab_cluster:
                         )
                     )
                 else:
+                    # Interactive map or static image fallback
+                    if os.path.exists(clusters_html):
+                        try:
+                            with open(clusters_html, "r", encoding="utf-8") as hf:
+                                html_text = hf.read()
+                            st.components.v1.html(html_text, height=820, scrolling=False)
+                            st.caption("Scroll to zoom, drag to pan, click a hub to focus, search to jump")
+                            st.download_button(
+                                "Download interactive map (.html)",
+                                data=html_text,
+                                file_name="concept_map.html",
+                                mime="text/html",
+                            )
+                        except Exception as e:
+                            st.error(f"Could not load interactive map: {e}")
+
+                        if os.path.exists(clusters_png):
+                            with st.expander("Static image (PNG)", expanded=False):
+                                st.image(clusters_png, use_container_width=True)
+                    else:
+                        if os.path.exists(clusters_png):
+                            st.image(clusters_png, use_container_width=True)
+
+                    # Metric cards
                     metrics = cluster_data.get("metrics", {})
+                    bridges_list = cluster_data.get("bridges", [])
                     st.markdown(
                         f"""
                         <div style="display:flex; flex-wrap:wrap; gap:12px; margin: 8px 0 16px 0; font-family:'JetBrains Mono',monospace; font-size:0.85rem;">
                             <span class="badge-mono badge-green">Concepts: {metrics.get('n_concepts_clustered', 0)}</span>
+                            <span class="badge-mono badge-green">Relations: {metrics.get('n_relations', 0)}</span>
                             <span class="badge-mono badge-purple">Clusters: {metrics.get('n_clusters', 0)}</span>
                             <span class="badge-mono badge-purple">Modularity: {metrics.get('modularity', 0.0):.3f}</span>
-                            <span class="badge-mono badge-green">Cross-Source Concepts: {metrics.get('cross_source_concepts', 0)}</span>
-                            <span class="badge-mono">Hub Coverage: {metrics.get('hub_coverage', 0.0)*100:.1f}%</span>
+                            <span class="badge-mono badge-purple">Silhouette: {metrics.get('silhouette_cosine', 0.0):.3f}</span>
+                            <span class="badge-mono">Components: {metrics.get('n_components', 0)}</span>
+                            <span class="badge-mono">Bridges: {len(bridges_list)}</span>
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
-
-                    if os.path.exists(clusters_png):
-                        st.image(clusters_png, use_container_width=True)
 
                     # Cluster breakdown table
                     st.markdown("#### Concept Clusters Breakdown")
@@ -848,25 +764,82 @@ with tab_cluster:
                     if clusters_list:
                         df_rows = []
                         for c in clusters_list:
-                            members_preview = ", ".join([
-                                f"{m.get('name', '')} [{m.get('link_to_hub', '')}]"
-                                for m in c.get("members", [])
-                            ])
+                            members_names = [m.get("name", "") for m in c.get("members", [])]
                             mix_str = ", ".join([f"{sf}: {int(frac*100)}%" for sf, frac in c.get("source_mix", {}).items()])
                             df_rows.append({
-                                "Cluster ID": f"#{c.get('id')}",
-                                "Hub Concept": c.get("hub"),
+                                "Hub": c.get("hub"),
                                 "Size": c.get("size"),
-                                "Members": members_preview,
+                                "Members": ", ".join(members_names),
                                 "Source Mix": mix_str,
                             })
                         st.dataframe(pd.DataFrame(df_rows), use_container_width=True, hide_index=True)
 
-                    # Expander for global topics, orphans, extraction log
+                    # Bridges table
+                    if bridges_list:
+                        st.markdown("#### Bridge Concepts")
+                        df_bridges = []
+                        for br in bridges_list:
+                            df_bridges.append({
+                                "Concept": br.get("concept"),
+                                "From Cluster": br.get("from"),
+                                "To Cluster": br.get("to"),
+                                "Ratio": f"{br.get('ratio', 0):.2f}",
+                            })
+                        st.dataframe(pd.DataFrame(df_bridges), use_container_width=True, hide_index=True)
+
+                    # Expanders
+                    # Merge report
+                    if has_stage2:
+                        with st.expander("Merge Report", expanded=False):
+                            try:
+                                with open(concept_graph, "r", encoding="utf-8") as gf:
+                                    graph_data = json.load(gf)
+                                merge_report = graph_data.get("merge_report", [])
+                                if merge_report:
+                                    df_merge = []
+                                    for mr in merge_report:
+                                        df_merge.append({
+                                            "A": mr.get("a"),
+                                            "B": mr.get("b"),
+                                            "Cosine": f"{mr.get('cosine', 0):.3f}" if mr.get("cosine") is not None else "—",
+                                            "Decision": mr.get("decision"),
+                                        })
+                                    st.dataframe(pd.DataFrame(df_merge), use_container_width=True, hide_index=True)
+                                else:
+                                    st.caption("No merge report available.")
+                            except Exception:
+                                st.caption("Could not load merge report.")
+
+                    # Top 20 relations with evidence
+                    with st.expander("Top Relations (with evidence)", expanded=False):
+                        try:
+                            if not has_stage2:
+                                raise FileNotFoundError
+                            with open(concept_graph, "r", encoding="utf-8") as gf:
+                                graph_data = json.load(gf)
+                            rels = graph_data.get("relations", [])
+                            sorted_rels = sorted(rels, key=lambda r: r.get("support", 0), reverse=True)[:20]
+                            if sorted_rels:
+                                df_rels = []
+                                for r in sorted_rels:
+                                    df_rels.append({
+                                        "Source": r.get("source"),
+                                        "Relation": r.get("relation"),
+                                        "Target": r.get("target"),
+                                        "Support": r.get("support", 0),
+                                        "Evidence": r.get("evidence", ""),
+                                    })
+                                st.dataframe(pd.DataFrame(df_rels), use_container_width=True, hide_index=True)
+                            else:
+                                st.caption("No relations found.")
+                        except Exception:
+                            st.caption("Could not load relations.")
+
+                    # Global topics, orphans, extraction log
                     with st.expander("Global Topics, Orphans & Extraction Log", expanded=False):
                         c_ex1, c_ex2 = st.columns(2)
                         with c_ex1:
-                            st.markdown("##### Global Hub Topics (Frequency > 40%)")
+                            st.markdown("##### Global Hub Topics (Frequency > 50%)")
                             gt = cluster_data.get("global_topics", [])
                             if gt:
                                 st.write(", ".join(gt))
@@ -892,4 +865,3 @@ with tab_cluster:
                 st.error(f"Error displaying concept clusters: {str(e)}")
         else:
             st.info("Concept map not built yet. Run the 3 steps above to generate the concept map.")
-
