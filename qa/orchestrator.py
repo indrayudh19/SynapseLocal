@@ -1,18 +1,17 @@
 """
 qa/orchestrator.py
-Sequences the five QA stages and manages locks, run directories, and error handling.
+Sequences the six QA stages and manages locks, run directories, and error handling.
+Q2 (raw retrieve) and Q3 (LLM semantic filter) now run in-process — no subprocess workers.
 """
 import json
 import os
 import shutil
-import subprocess
-import sys
 import time
 from datetime import datetime
 
 import ollama
 
-from qa.config import QA_MODEL, PIPELINE_VERSION, QA_DEBUG, WORKER_TIMEOUT_S, RERANKER
+from qa.config import QA_MODEL, PIPELINE_VERSION, QA_DEBUG, WORKER_TIMEOUT_S
 from qa import paths as qa_paths
 from qa import locks
 from qa import store
@@ -31,49 +30,6 @@ def _unload_all_models():
         pass
 
 
-def _run_worker(stage: str, session_id: str, run_id: str) -> dict:
-    """
-    Run a QA worker subprocess for retrieve or rerank.
-    Returns the parsed JSON status line from stdout.
-    """
-    env = os.environ.copy()
-    env["TOKENIZERS_PARALLELISM"] = "false"
-
-    result = subprocess.run(
-        [sys.executable, "-m", "qa.worker", stage, session_id, run_id],
-        timeout=WORKER_TIMEOUT_S,
-        capture_output=True,
-        text=True,
-        env=env,
-        cwd=qa_paths.PROJECT_ROOT,
-    )
-
-    if result.returncode != 0:
-        # Try reading error from stdout or error.json
-        error_msg = f"Worker {stage} failed (exit {result.returncode})"
-        if result.stdout.strip():
-            try:
-                status = json.loads(result.stdout.strip().split("\n")[-1])
-                error_msg = status.get("message", error_msg)
-            except Exception:
-                pass
-        err_file = qa_paths.error_path(session_id, run_id)
-        if os.path.exists(err_file):
-            try:
-                with open(err_file, "r", encoding="utf-8") as f:
-                    err_data = json.load(f)
-                error_msg = err_data.get("error", error_msg)
-            except Exception:
-                pass
-        raise RuntimeError(error_msg)
-
-    # Parse status from stdout
-    if result.stdout.strip():
-        try:
-            return json.loads(result.stdout.strip().split("\n")[-1])
-        except Exception:
-            pass
-    return {"status": "ok"}
 
 
 def ask(session_id: str, question: str, on_status=None) -> dict:
@@ -97,10 +53,7 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
     if not question:
         return {"status": "error", "message": "Question is empty."}
 
-    # Check index exists
-    if not os.path.exists(qa_paths.faiss_index_path(session_id)):
-        return {"status": "error", "message": "No index found. Run Embed & Store first."}
-
+    # Check chunks exist (no FAISS index needed for QA)
     if not os.path.exists(qa_paths.chunks_jsonl_path(session_id)):
         return {"status": "error", "message": "No chunks found. Run Embed & Store first."}
 
@@ -148,19 +101,18 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
             understanding = understand_run(session_id, run_id, question, chunk_files)
             timings["understand_s"] = round(time.time() - t0, 1)
 
-            # Best-effort unload after Q1
-            _unload_all_models()
-
-            # ── Q2: Retrieve (worker subprocess) ─────────────
+            # ── Q2: Raw Retrieve (in process) ────────────────
             _status("Searching the documents")
             t0 = time.time()
-            _run_worker("retrieve", session_id, run_id)
+            from qa.retrieve import run as retrieve_run
+            retrieve_run(session_id, run_id)
             timings["retrieve_s"] = round(time.time() - t0, 1)
 
-            # ── Q3: Rerank (worker subprocess) ───────────────
-            _status("Ranking passages")
+            # ── Q3: LLM Semantic Filter (in process) ─────────
+            _status("Filtering passages")
             t0 = time.time()
-            _run_worker("rerank", session_id, run_id)
+            from qa.rerank import run as rerank_run
+            rerank_run(session_id, run_id)
             timings["rerank_s"] = round(time.time() - t0, 1)
 
             # Check if Q3 wrote not_found
@@ -246,9 +198,6 @@ def _build_record(run_id: str, question: str, understanding: dict,
     ts = datetime.now().isoformat(timespec="seconds")
     answer_id = "a_" + datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Determine embed model from session (always all-MiniLM-L6-v2 in this codebase)
-    embed_model = "all-MiniLM-L6-v2"
-
     # Build evidence from passages
     evidence = []
     for p in reranked.get("passages", []):
@@ -282,8 +231,8 @@ def _build_record(run_id: str, question: str, understanding: dict,
         "timings": timings,
         "versions": {
             "qa_model": QA_MODEL,
-            "embed_model": embed_model,
-            "reranker": RERANKER,
+            "retrieval": "raw_text+bm25",
+            "filter": "qwen_llm_semantic",
             "pipeline": PIPELINE_VERSION,
         },
     }

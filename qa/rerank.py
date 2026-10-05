@@ -1,16 +1,20 @@
 """
 qa/rerank.py
-Q3: Rerank and evidence windows.
-Runs inside the worker subprocess (torch / cross-encoder imports are local).
+Q3: LLM Semantic Filter — Qwen determines which retrieved passages are
+actually relevant to the question, removes irrelevant material, and builds
+evidence windows.
+No cross-encoder or sentence-transformers needed.
 """
 import json
 import os
 
+import ollama
+
 from qa.config import (
-    RERANKER, RERANK_MAXLEN, RERANK_BATCH,
+    QA_MODEL, NUM_CTX_FILTER, NUM_PREDICT_FILTER,
+    LLM_FILTER_MAX_PASSAGES,
     K_PASSAGES, K_PASSAGES_COMPARE,
     PARENT_MAX_CHARS, WINDOW_MAX_CHARS,
-    NO_ANSWER_SCORE, COVERAGE_MARGIN,
 )
 from qa import paths as qa_paths
 from qa.text_utils import split_sentences
@@ -27,15 +31,80 @@ def _load_parent_text(session_id: str, parent_id: str, chunks: list[dict]) -> st
     return combined[:PARENT_MAX_CHARS]
 
 
-def _best_window(sentences: list[dict], max_chars: int) -> list[dict]:
+def _llm_filter_passages(question: str, candidates: list[dict]) -> list[dict]:
     """
-    Choose the contiguous window of sentences (at most max_chars total)
-    that maximizes the sum of positive sentence scores.
+    Use Qwen to rate each candidate passage as relevant or irrelevant.
+    Returns candidates annotated with a 'relevant' boolean.
+    Each passage is evaluated individually for reliability.
+    """
+    rated = []
+    for c in candidates:
+        heading = c.get("heading", "")
+        text = c.get("text", "")
+        doc_text = (heading + " " + text).strip() if heading else text
+        # Truncate very long passages to keep context manageable
+        doc_text = doc_text[:800]
+
+        prompt = (
+            'Decide whether the PASSAGE is relevant to the QUESTION.\n'
+            'Answer {"relevant": true} if the passage contains information that '
+            'helps answer the question, even partially.\n'
+            'Answer {"relevant": false} if the passage is completely unrelated.\n'
+            f'QUESTION: {question}\n'
+            f'PASSAGE:\n{doc_text}'
+        )
+
+        try:
+            response = ollama.chat(
+                model=QA_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                format={
+                    "type": "object",
+                    "properties": {"relevant": {"type": "boolean"}},
+                    "required": ["relevant"],
+                },
+                options={
+                    "temperature": 0,
+                    "seed": 42,
+                    "num_ctx": NUM_CTX_FILTER,
+                    "num_predict": NUM_PREDICT_FILTER,
+                },
+                keep_alive="60s",
+            )
+            verdict = json.loads(response["message"]["content"])
+            is_relevant = verdict.get("relevant", True)
+        except Exception:
+            # On error, keep the passage (fail open)
+            is_relevant = True
+
+        c_copy = dict(c)
+        c_copy["llm_relevant"] = is_relevant
+        rated.append(c_copy)
+
+    return rated
+
+
+def _position_scored_window(sentences: list[str], max_chars: int) -> list[dict]:
+    """
+    Build a sentence window using position-based heuristic scoring.
+    Earlier sentences score higher (they tend to contain topic sentences).
+    Returns a list of sentence dicts with sid and text.
     """
     if not sentences:
         return []
 
+    # Score: earlier sentences get higher scores
     n = len(sentences)
+    sent_entries = []
+    for i, s in enumerate(sentences):
+        score = max(0.0, 1.0 - (i / max(n, 1)) * 0.5)
+        sent_entries.append({
+            "sid": f"0.{i+1}",  # placeholder sid, will be re-assigned later
+            "text": s,
+            "score": round(score, 4),
+        })
+
+    # Greedy window: find the best contiguous block within max_chars
     best_score = -float("inf")
     best_start, best_end = 0, 0
 
@@ -43,8 +112,8 @@ def _best_window(sentences: list[dict], max_chars: int) -> list[dict]:
         total_chars = 0
         total_score = 0.0
         for end in range(start, n):
-            total_chars += len(sentences[end]["text"])
-            sc = sentences[end].get("score", 0.0)
+            total_chars += len(sent_entries[end]["text"])
+            sc = sent_entries[end]["score"]
             if sc > 0:
                 total_score += sc
             if total_chars > max_chars:
@@ -54,13 +123,14 @@ def _best_window(sentences: list[dict], max_chars: int) -> list[dict]:
                 best_start = start
                 best_end = end
 
-    return sentences[best_start:best_end + 1]
+    return sent_entries[best_start:best_end + 1]
 
 
 def run(session_id: str, run_id: str) -> dict:
     """
-    Q3: Rerank candidates and build evidence windows.
+    Q3: LLM Semantic Filter + evidence window construction.
     Reads candidates.json and understanding.json, writes reranked.json.
+    Uses Qwen to filter irrelevant passages instead of a cross-encoder.
     """
     # Load inputs
     c_path = qa_paths.candidates_path(session_id, run_id)
@@ -81,101 +151,65 @@ def run(session_id: str, run_id: str) -> dict:
 
     question = understanding.get("queries", [""])[0] if understanding.get("queries") else ""
     intent = understanding.get("intent", "other")
-    sub_questions = understanding.get("sub_questions", [])
 
-    # Try loading cross-encoder
-    cross_encoder = None
-    rerank_skipped = False
-    try:
-        from sentence_transformers import CrossEncoder
-        cross_encoder = CrossEncoder(RERANKER, max_length=RERANK_MAXLEN)
-    except Exception:
-        rerank_skipped = True
+    # ── LLM semantic filter ─────────────────────────────────
+    rated = _llm_filter_passages(question, candidates)
 
-    if cross_encoder is not None:
-        # Score each candidate: (question, heading + " " + text)
-        pairs = []
-        for c in candidates:
-            heading = c.get("heading", "")
-            text = c.get("text", "")
-            doc_text = (heading + " " + text).strip() if heading else text
-            pairs.append((question, doc_text))
+    # Separate relevant and irrelevant
+    relevant = [c for c in rated if c.get("llm_relevant", True)]
+    irrelevant = [c for c in rated if not c.get("llm_relevant", True)]
 
-        scores = cross_encoder.predict(
-            pairs, batch_size=RERANK_BATCH, show_progress_bar=False
-        )
+    # Answerability gate: if no passages are relevant, return not_found
+    if not relevant:
+        result = {
+            "status": "not_found",
+            "closest": [
+                {
+                    "chunk_id": c.get("chunk_id"),
+                    "source_file": c.get("source_file"),
+                    "heading": c.get("heading"),
+                    "text": c.get("text", "")[:300],
+                    "retrieval_score": c.get("retrieval_score", 0),
+                }
+                for c in candidates[:3]
+            ],
+        }
+        out_path = qa_paths.reranked_path(session_id, run_id)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False, indent=2)
+        return result
 
-        # Sub-question scoring: take max
-        if sub_questions:
-            for sq in sub_questions:
-                sq_pairs = [(sq, p[1]) for p in pairs]
-                sq_scores = cross_encoder.predict(
-                    sq_pairs, batch_size=RERANK_BATCH, show_progress_bar=False
-                )
-                scores = [max(s, sq_s) for s, sq_s in zip(scores, sq_scores)]
-
-        for i, c in enumerate(candidates):
-            c["rerank_score"] = float(scores[i])
-
-        # Sort by rerank score descending
-        candidates.sort(key=lambda c: c.get("rerank_score", 0), reverse=True)
-
-        # Answerability gate
-        best_score = candidates[0].get("rerank_score", 0) if candidates else 0
-        if best_score < NO_ANSWER_SCORE:
-            result = {
-                "status": "not_found",
-                "closest": [
-                    {
-                        "chunk_id": c.get("chunk_id"),
-                        "source_file": c.get("source_file"),
-                        "heading": c.get("heading"),
-                        "text": c.get("text", "")[:300],
-                        "rerank": c.get("rerank_score", 0),
-                    }
-                    for c in candidates[:3]
-                ],
-            }
-            out_path = qa_paths.reranked_path(session_id, run_id)
-            with open(out_path, "w", encoding="utf-8") as f:
-                json.dump(result, f, ensure_ascii=False, indent=2)
-            return result
-    else:
-        # No cross-encoder: keep fused order, no gate
-        for c in candidates:
-            c["rerank_score"] = c.get("rrf", 0)
-
-    # Select passages
+    # ── Select passages (parent-deduped) ────────────────────
     k_pass = K_PASSAGES_COMPARE if intent == "comparison" else K_PASSAGES
     seen_parents = set()
     selected = []
-    for c in candidates:
+    for c in relevant:
         pid = c.get("parent_id", c.get("chunk_id"))
         if pid in seen_parents:
             continue
         seen_parents.add(pid)
         selected.append(c)
-        if len(selected) >= k_pass:
+        if len(selected) >= min(k_pass, LLM_FILTER_MAX_PASSAGES):
             break
 
-    # Per-document coverage: if candidates from 2+ source files exist,
-    # include the best candidate of each file within COVERAGE_MARGIN of best
+    # Per-document coverage: include best candidate from each source file
     if len(selected) > 0:
-        best_rerank = selected[0].get("rerank_score", 0)
         source_files_in_selected = {c.get("source_file") for c in selected}
-        all_source_files = {c.get("source_file") for c in candidates}
+        all_source_files = {c.get("source_file") for c in relevant}
 
         if len(all_source_files) >= 2:
-            for c in candidates:
+            for c in relevant:
                 sf = c.get("source_file")
                 pid = c.get("parent_id", c.get("chunk_id"))
                 if sf not in source_files_in_selected and pid not in seen_parents:
-                    if c.get("rerank_score", 0) >= best_rerank - COVERAGE_MARGIN:
-                        selected.append(c)
-                        seen_parents.add(pid)
-                        source_files_in_selected.add(sf)
+                    selected.append(c)
+                    seen_parents.add(pid)
+                    source_files_in_selected.add(sf)
 
-    # Load all chunks for parent text reconstruction
+    # Cap to max
+    selected = selected[:LLM_FILTER_MAX_PASSAGES]
+
+    # ── Load all chunks for parent text reconstruction ──────
     all_chunks = []
     chunks_path = qa_paths.chunks_jsonl_path(session_id)
     if os.path.exists(chunks_path):
@@ -185,7 +219,7 @@ def run(session_id: str, run_id: str) -> dict:
                 if line:
                     all_chunks.append(json.loads(line))
 
-    # Build passage windows
+    # ── Build passage windows ───────────────────────────────
     passages = []
     for rank, c in enumerate(selected, 1):
         parent_id = c.get("parent_id", "")
@@ -200,32 +234,22 @@ def run(session_id: str, run_id: str) -> dict:
         if not sents:
             sents = [parent_text[:WINDOW_MAX_CHARS]]
 
-        # Score sentences with cross-encoder if available
-        sent_entries = []
-        if cross_encoder is not None and not rerank_skipped:
-            sent_pairs = [(question, s) for s in sents]
-            sent_scores = cross_encoder.predict(
-                sent_pairs, batch_size=RERANK_BATCH, show_progress_bar=False
-            )
-            for i, (s, sc) in enumerate(zip(sents, sent_scores)):
-                sent_entries.append({
-                    "sid": f"{rank}.{i+1}",
-                    "text": s,
-                    "score": round(float(sc), 4),
-                })
-        else:
-            # No cross-encoder: use first sentences as window
-            for i, s in enumerate(sents):
-                sent_entries.append({
+        # Build window with position-based scoring
+        window_entries = _position_scored_window(sents, WINDOW_MAX_CHARS)
+
+        # Re-assign sentence IDs with passage rank
+        for i, entry in enumerate(window_entries):
+            entry["sid"] = f"{rank}.{i+1}"
+
+        if not window_entries:
+            # Fallback: first few sentences
+            window_entries = []
+            for i, s in enumerate(sents[:3]):
+                window_entries.append({
                     "sid": f"{rank}.{i+1}",
                     "text": s,
                     "score": 0.0,
                 })
-
-        # Select best window
-        window = _best_window(sent_entries, WINDOW_MAX_CHARS)
-        if not window:
-            window = sent_entries[:3]  # fallback
 
         passage = {
             "pid": rank,
@@ -235,17 +259,11 @@ def run(session_id: str, run_id: str) -> dict:
             "source_type": c.get("source_type", ""),
             "page_or_slide": c.get("page_or_slide", 0),
             "heading": c.get("heading", ""),
-            "rerank": round(c.get("rerank_score", 0), 4) if not rerank_skipped else "skipped",
-            "rrf": round(c.get("rrf", 0), 6),
-            "window": window,
+            "rerank": round(c.get("retrieval_score", 0), 4),
+            "rrf": round(c.get("retrieval_score", 0), 6),
+            "window": window_entries,
         }
         passages.append(passage)
-
-    # Free cross-encoder
-    if cross_encoder is not None:
-        del cross_encoder
-        import gc
-        gc.collect()
 
     result = {"status": "ok", "passages": passages}
     out_path = qa_paths.reranked_path(session_id, run_id)

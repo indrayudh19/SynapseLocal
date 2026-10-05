@@ -21,18 +21,21 @@ NUM_PREDICT_POLISH_MAX  = 480
 TARGET_WORDS = {"fact":70,"definition":100,"numeric":50,"yes_no":60,"list":140,
                 "comparison":200,"procedure":160,"explanation":200,"summary":220,"other":120}
 
-DENSE_TOPK, BM25_TOPK, FUSED_CAND, SUBQ_TOPK = 30, 30, 24, 12
-RRF_K = 60
-LIST_WEIGHTS = {"dense_original": 1.0, "dense_rewrite": 0.7, "dense_hyde": 0.7,
-                "bm25_terms": 1.0, "bm25_question": 0.7}
-DOC_HINT_BOOST = 1.15
+# ── Raw Retrieval (Q2) ──────────────────────────────────────
+RAW_RETRIEVE_TOP_K = 30              # max chunks returned from raw text search
+BM25_TOPK = 30                       # BM25 candidates per query
+DOC_HINT_BOOST = 1.15                # multiplier for chunks from hinted files
+PHRASE_MATCH_BONUS = 3.0             # flat bonus for exact key-term substring match
+HEADING_MATCH_BONUS = 2.0            # flat bonus for heading containing a key term
 
-RERANKER = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-RERANK_MAXLEN, RERANK_BATCH = 384, 16
+# ── LLM Semantic Filter (Q3) ───────────────────────────────
+LLM_FILTER_MAX_PASSAGES = 8          # max passages kept after LLM filter
+NUM_CTX_FILTER = 2048                # context window for filter stage
+NUM_PREDICT_FILTER = 12              # token budget for each relevance verdict
+
+# ── Evidence Windows (shared by Q3 / Q4) ───────────────────
 K_PASSAGES, K_PASSAGES_COMPARE = 5, 6
 PARENT_MAX_CHARS, WINDOW_MAX_CHARS, MAX_PROMPT_CHARS = 1800, 900, 7000
-NO_ANSWER_SCORE = -4.0               # starting value; best cross-encoder logit below this -> not found
-COVERAGE_MARGIN = 6.0                # per-document coverage rule (section 7)
 
 MAX_CLAIMS, SUPPORT_MIN = 5, 0.5
 VERIFY_PARAPHRASES, VERIFY_MAX = True, 3

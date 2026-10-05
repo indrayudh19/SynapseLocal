@@ -416,12 +416,12 @@ with tab_chat:
         st.info("Create a session from the sidebar to begin.")
     else:
         # Precondition checks
-        has_index = os.path.exists(qa_paths.faiss_index_path(sid))
+        has_index = os.path.exists(qa_paths.chunks_jsonl_path(sid))
         rep_running = qa_locks.is_representation_running(sid)
         input_disabled = (not has_index) or rep_running
 
         if not has_index:
-            st.info("No index found. Run **Embed & Store** first to enable Q&A.")
+            st.info("No document chunks found. Run **Embed & Store** first to enable Q&A.")
         if rep_running:
             st.warning("A concept map stage is running. Q&A is disabled until it finishes.")
 

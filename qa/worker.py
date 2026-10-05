@@ -3,6 +3,9 @@ qa/worker.py
 Subprocess entry point for Q2 (retrieve) and Q3 (rerank).
 Usage: python -m qa.worker <stage> <session_id> <run_id>
 
+NOTE: The orchestrator no longer uses subprocess workers (Pass 6).
+Q2 and Q3 now run in-process. This module is retained for standalone debugging.
+
 Runs the specified stage, prints a single JSON status line, exits non-zero on failure.
 """
 import json
