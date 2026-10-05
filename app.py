@@ -8,7 +8,7 @@ from backend.session_manager import (
     save_uploaded_files, get_session_dir,
 )
 from qa.orchestrator import ask as qa_ask
-from qa.store import load_answers as qa_load_answers
+from qa.store import load_answers as qa_load_answers, display_text as qa_display_text
 from qa import locks as qa_locks
 from qa import paths as qa_paths
 from backend.vector_store import LocalVectorStore
@@ -436,169 +436,8 @@ with tab_chat:
 
             # Assistant answer
             with st.chat_message("assistant"):
-                status = rec.get("status", "answered")
-
-                if status == "not_found":
-                    st.write("The documents do not appear to contain an answer to this question.")
-                    closest = rec.get("claims", [])  # might be in closest
-                    closest_evidence = rec.get("evidence", [])
-                    if closest_evidence:
-                        with st.expander("Closest passages", expanded=False):
-                            for ev in closest_evidence[:3]:
-                                _sf = ev.get("source_file", "")
-                                _pg = ev.get("page_or_slide", "")
-                                _hd = ev.get("heading", "")
-                                st.markdown(f"**[{ev.get('pid', '?')}]** {_sf}, p.{_pg}, \"{_hd}\"")
-                                for s in ev.get("window", [])[:3]:
-                                    st.text(s.get("text", ""))
-                else:
-                    claims = rec.get("claims", [])
-                    partial = rec.get("partial", False)
-                    consolidated = rec.get("consolidated")
-
-                    if consolidated:
-                        lead = consolidated.get("lead", {})
-                        points = consolidated.get("points", [])
-                        style = consolidated.get("style", "paragraph")
-                        fallback = consolidated.get("fallback", False)
-
-                        lead_markers = "".join(f"[{m}]" for m in lead.get("markers", []))
-                        lead_text = _escape_md(lead.get("text", "")) + (f" {lead_markers}" if lead_markers else "")
-
-                        if style == "bullets":
-                            st.markdown(lead_text)
-                            for pt in points:
-                                pt_markers = "".join(f"[{m}]" for m in pt.get("markers", []))
-                                pt_text = _escape_md(pt.get("text", "")) + (f" {pt_markers}" if pt_markers else "")
-                                st.markdown(f"- {pt_text}")
-                        elif style == "steps":
-                            st.markdown(lead_text)
-                            for idx, pt in enumerate(points, start=1):
-                                pt_markers = "".join(f"[{m}]" for m in pt.get("markers", []))
-                                pt_text = _escape_md(pt.get("text", "")) + (f" {pt_markers}" if pt_markers else "")
-                                st.markdown(f"{idx}. {pt_text}")
-                        else:  # paragraph
-                            para_parts = [lead_text]
-                            for pt in points:
-                                pt_markers = "".join(f"[{m}]" for m in pt.get("markers", []))
-                                pt_text = _escape_md(pt.get("text", "")) + (f" {pt_markers}" if pt_markers else "")
-                                para_parts.append(pt_text)
-                            st.markdown(" ".join(para_parts))
-
-                        if fallback:
-                            st.caption("Consolidation unavailable; showing extracted statements.")
-                        else:
-                            st.caption(f"Consolidated from {len(claims)} extracted statements. Open Sources for the original text.")
-
-                    else:
-                        # Older records without consolidated
-                        for cl in claims:
-                            kind = cl.get("kind", "paraphrase")
-                            support_ids = cl.get("support", [])
-                            cite_str = " ".join(f"[{sid_ref.split('.')[0]}]" for sid_ref in support_ids)
-
-                            st.markdown(f"{_escape_md(cl.get('text', ''))} {cite_str}")
-
-                            if kind == "quote":
-                                badge = "Quoted from source"
-                            elif kind == "extractive_fallback":
-                                badge = "Extractive"
-                            elif cl.get("verified"):
-                                badge = "Synthesized (verified)"
-                            elif kind == "weak":
-                                badge = "Synthesized (weak support)"
-                            else:
-                                badge = "Synthesized"
-                            st.caption(badge)
-
-                    if partial:
-                        st.caption("This answer is based on the top passages only.")
-
-                    # Expander 1: Sources (unchanged)
-                    evidence = rec.get("evidence", [])
-                    if evidence:
-                        with st.expander("Sources", expanded=False):
-                            cited_sids = set()
-                            for cl in claims:
-                                cited_sids.update(cl.get("support", []))
-
-                            for ev in evidence:
-                                _sf = ev.get("source_file", "")
-                                _pg = ev.get("page_or_slide", "")
-                                _hd = ev.get("heading", "")
-                                st.markdown(f"**[{ev.get('pid', '?')}]** {_sf}, p.{_pg}, \"{_hd}\"")
-                                for s in ev.get("window", []):
-                                    s_id = s.get("sid", "")
-                                    s_text = s.get("text", "")
-                                    s_text_escaped = _escape_md(s_text)
-                                    if s_id in cited_sids:
-                                        st.markdown(f"**{s_id}** **{s_text_escaped}**")
-                                    else:
-                                        st.markdown(f"{s_id} {s_text_escaped}")
-
-                    # Expander 2: Extracted statements (before consolidation)
-                    if consolidated and claims:
-                        with st.expander("Extracted statements (before consolidation)", expanded=False):
-                            for cl in claims:
-                                kind = cl.get("kind", "paraphrase")
-                                support_ids = cl.get("support", [])
-                                cite_str = " ".join(f"[{sid_ref.split('.')[0]}]" for sid_ref in support_ids)
-
-                                st.markdown(f"{_escape_md(cl.get('text', ''))} {cite_str}")
-
-                                if kind == "quote":
-                                    badge = "Quoted from source"
-                                elif kind == "extractive_fallback":
-                                    badge = "Extractive"
-                                elif cl.get("verified"):
-                                    badge = "Synthesized (verified)"
-                                elif kind == "weak":
-                                    badge = "Synthesized (weak support)"
-                                else:
-                                    badge = "Synthesized"
-                                st.caption(badge)
-
-                            # Excluded or dropped claims if any
-                            dropped_or_excluded = []
-                            for ex in consolidated.get("excluded", []):
-                                dropped_or_excluded.append((ex.get("text", ""), "Excluded during consolidation"))
-                            for dr in consolidated.get("dropped", []):
-                                dropped_or_excluded.append((dr.get("text", ""), f"Dropped: {dr.get('reason', 'verification')}"))
-                            for d_cl in rec.get("dropped_claims", []):
-                                dropped_or_excluded.append((d_cl.get("text", ""), "Dropped during verification (unsupported)"))
-
-                            if dropped_or_excluded:
-                                st.markdown("**Dropped or excluded statements:**")
-                                for txt, reason in dropped_or_excluded:
-                                    if txt:
-                                        st.markdown(f"- {_escape_md(txt)}")
-                                        st.caption(reason)
-
-                    # Expander 3: How this was answered (unchanged + consolidation time)
-                    understanding = rec.get("understanding", {})
-                    timings = rec.get("timings", {})
-                    versions = rec.get("versions", {})
-                    with st.expander("How this was answered", expanded=False):
-                        col_a, col_b = st.columns(2)
-                        with col_a:
-                            st.markdown(f"**Intent:** {understanding.get('intent', '?')}")
-                            st.markdown(f"**Answer type:** {understanding.get('answer_type', '?')}")
-                            st.markdown(f"**Key terms:** {', '.join(understanding.get('key_terms', []))}")
-                            queries = understanding.get('queries', [])
-                            if queries:
-                                st.markdown(f"**Query rewrites:** {'; '.join(queries[1:]) if len(queries) > 1 else 'none'}")
-                            subs = understanding.get('sub_questions', [])
-                            if subs:
-                                st.markdown(f"**Sub-questions:** {'; '.join(subs)}")
-                        with col_b:
-                            if evidence:
-                                for ev in evidence[:3]:
-                                    rerank_val = ev.get('rerank', '?')
-                                    rrf_val = ev.get('rrf', '?')
-                                    st.caption(f"Passage {ev.get('pid')}: rerank={rerank_val}, rrf={rrf_val}")
-                            timing_parts = [f"{k}: {v}s" for k, v in timings.items()]
-                            st.markdown(f"**Timings:** {', '.join(timing_parts)}")
-                            st.markdown(f"**Models:** {versions.get('qa_model', '?')} / {versions.get('embed_model', '?')} / {versions.get('reranker', '?')}")
+                ans_text = qa_display_text(rec)
+                st.markdown(ans_text.replace("$", "\\$"))
 
         # Chat input
         user_query = st.chat_input(
@@ -610,17 +449,9 @@ with tab_chat:
                 st.write(user_query)
 
             with st.chat_message("assistant"):
-                with st.status("Answering", expanded=True) as status_widget:
-                    stage_times: list[str] = []
-                    import time as _time
-                    stage_info = {"start": _time.time()}
-
+                status_placeholder = st.empty()
+                with status_placeholder.status("Answering", expanded=True) as status_widget:
                     def _on_status(label: str):
-                        elapsed = _time.time() - stage_info["start"]
-                        if stage_times:
-                            stage_times[-1] += f" ({elapsed:.1f}s)"
-                        stage_times.append(label)
-                        stage_info["start"] = _time.time()
                         status_widget.update(label=label)
 
                     try:
@@ -628,12 +459,7 @@ with tab_chat:
                     except Exception as e:
                         result = {"status": "error", "message": str(e)}
 
-                    # Finalize last stage timing
-                    elapsed = _time.time() - stage_info["start"]
-                    if stage_times:
-                        stage_times[-1] += f" ({elapsed:.1f}s)"
-
-                    status_widget.update(label="Done", state="complete", expanded=False)
+                status_placeholder.empty()
 
                 if result.get("status") == "error":
                     st.error(result.get("message", "An error occurred."))

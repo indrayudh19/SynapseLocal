@@ -194,17 +194,31 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
             verified = verify_run(session_id, run_id)
             timings["verify_s"] = round(time.time() - t0, 1)
 
-            # ── Q6: Consolidate (in process) ─────────────────
-            _status("Consolidating the answer")
+            # ── Q6: Polish (in process) ──────────────────────
+            _status("Writing the final answer")
             t0 = time.time()
-            from qa.consolidate import run as consolidate_run
-            consolidated = consolidate_run(session_id, run_id)
-            timings["consolidate_s"] = round(time.time() - t0, 1)
+            from qa.polish import run as polish_run
+            polished = polish_run(session_id, run_id)
+            if polished and "polish_s" in polished:
+                timings["polish_s"] = polished["polish_s"]
+            else:
+                timings["polish_s"] = round(time.time() - t0, 1)
+
+            if polished is None:
+                record = _build_record(
+                    run_id, question, understanding, reranked_data,
+                    {"status": "not_found", "claims": [], "partial": False,
+                     "closest": reranked_data.get("closest", []), "dropped_claims": []},
+                    None, timings, chunk_files,
+                )
+                store.append_answer(session_id, record)
+                _cleanup_run(session_id, run_id)
+                return record
 
             # ── Build final record ───────────────────────────
             record = _build_record(
                 run_id, question, understanding, reranked_data,
-                verified, consolidated, timings, chunk_files,
+                verified, polished, timings, chunk_files,
             )
             store.append_answer(session_id, record)
             _cleanup_run(session_id, run_id)
@@ -226,7 +240,7 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
 
 
 def _build_record(run_id: str, question: str, understanding: dict,
-                  reranked: dict, verified: dict, consolidated: dict | None,
+                  reranked: dict, verified: dict, polished: dict | None,
                   timings: dict, chunk_files: set[str]) -> dict:
     """Build the final answer record for answers.jsonl."""
     ts = datetime.now().isoformat(timespec="seconds")
@@ -273,8 +287,8 @@ def _build_record(run_id: str, question: str, understanding: dict,
             "pipeline": PIPELINE_VERSION,
         },
     }
-    if consolidated is not None:
-        rec["consolidated"] = consolidated
+    if polished is not None:
+        rec["polished"] = polished
     return rec
 
 

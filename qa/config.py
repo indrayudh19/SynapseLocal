@@ -4,17 +4,22 @@ Constants for the Document Q&A pipeline.
 """
 
 QA_MODEL = "qwen2.5:3b"
-PIPELINE_VERSION = "qa-v1.1"
+PIPELINE_VERSION = "qa-v1.2"
 QA_DEBUG = False                      # keep run artifacts after success if True
 
-NUM_CTX_UNDERSTAND, NUM_CTX_ANSWER = 1024, 3072      # Q4 and Q5 share NUM_CTX_ANSWER
+NUM_CTX_UNDERSTAND, NUM_CTX_ANSWER = 1024, 3072      # Q4, Q5 and Q6 share NUM_CTX_ANSWER
 NUM_PREDICT_UNDERSTAND, NUM_PREDICT_ANSWER, NUM_PREDICT_VERIFY = 220, 360, 12
-NUM_PREDICT_CONSOLIDATE = 260
-CONSOLIDATE_MAX_CLAIMS = 5
-CONSOLIDATE_MAX_POINTS = 4
-CONSOLIDATE_SUPPORT_MIN = 0.7      # stricter than SUPPORT_MIN: this stage only rewrites verified material
 DEDUPE_JACCARD = 0.8
-CONSOLIDATE_MAX_WORDS = 120
+
+POLISH_MAX_KEYPOINTS    = 5          # replaces CONSOLIDATE_MAX_CLAIMS
+POLISH_MAX_SOURCE_CHARS = 4500       # trim lowest-ranked windows first
+POLISH_SUPPORT_MIN      = 0.70       # union token coverage vs key points + source text
+POLISH_ANCHOR_MIN       = 0.30       # best single source sentence overlap
+POLISH_MIN_WORDS        = 15
+POLISH_MAX_HEADINGS     = 3
+NUM_PREDICT_POLISH_MAX  = 480
+TARGET_WORDS = {"fact":70,"definition":100,"numeric":50,"yes_no":60,"list":140,
+                "comparison":200,"procedure":160,"explanation":200,"summary":220,"other":120}
 
 DENSE_TOPK, BM25_TOPK, FUSED_CAND, SUBQ_TOPK = 30, 30, 24, 12
 RRF_K = 60

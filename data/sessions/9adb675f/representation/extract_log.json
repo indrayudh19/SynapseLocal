@@ -4,7 +4,7 @@
   "processed": 58,
   "skipped_boilerplate": 23,
   "failed": 0,
-  "avg_seconds_per_chunk": 5.89,
+  "avg_seconds_per_chunk": 5.84,
   "concepts_kept": 410,
   "concepts_dropped": 4,
   "relations_kept": 249,
