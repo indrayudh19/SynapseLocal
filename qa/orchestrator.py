@@ -121,56 +121,26 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
                 reranked_data = json.load(f)
 
             if reranked_data.get("status") == "not_found":
-                # Skip Q4, Q5, Q6
                 record = _build_record(
                     run_id, question, understanding, reranked_data,
-                    {"status": "not_found", "claims": [], "partial": False,
-                     "closest": reranked_data.get("closest", []), "dropped_claims": []},
-                    None, timings, chunk_files,
+                    {"status": "not_found", "text": "The documents do not appear to contain an answer to this question."},
+                    timings, chunk_files,
                 )
                 store.append_answer(session_id, record)
                 _cleanup_run(session_id, run_id)
                 return record
 
-            # ── Q4: Answer (in process) ──────────────────────
+            # ── Q4: Answer (Pass 7: LLM Answer Structuring) ──
             _status("Writing the answer")
             t0 = time.time()
             from qa.answer import run as answer_run
             answer_data = answer_run(session_id, run_id, question)
             timings["answer_s"] = round(time.time() - t0, 1)
 
-            # ── Q5: Verify (in process) ──────────────────────
-            _status("Checking the answer")
-            t0 = time.time()
-            from qa.verify import run as verify_run
-            verified = verify_run(session_id, run_id)
-            timings["verify_s"] = round(time.time() - t0, 1)
-
-            # ── Q6: Polish (in process) ──────────────────────
-            _status("Writing the final answer")
-            t0 = time.time()
-            from qa.polish import run as polish_run
-            polished = polish_run(session_id, run_id)
-            if polished and "polish_s" in polished:
-                timings["polish_s"] = polished["polish_s"]
-            else:
-                timings["polish_s"] = round(time.time() - t0, 1)
-
-            if polished is None:
-                record = _build_record(
-                    run_id, question, understanding, reranked_data,
-                    {"status": "not_found", "claims": [], "partial": False,
-                     "closest": reranked_data.get("closest", []), "dropped_claims": []},
-                    None, timings, chunk_files,
-                )
-                store.append_answer(session_id, record)
-                _cleanup_run(session_id, run_id)
-                return record
-
             # ── Build final record ───────────────────────────
             record = _build_record(
                 run_id, question, understanding, reranked_data,
-                verified, polished, timings, chunk_files,
+                answer_data, timings, chunk_files,
             )
             store.append_answer(session_id, record)
             _cleanup_run(session_id, run_id)
@@ -192,7 +162,7 @@ def ask(session_id: str, question: str, on_status=None) -> dict:
 
 
 def _build_record(run_id: str, question: str, understanding: dict,
-                  reranked: dict, verified: dict, polished: dict | None,
+                  reranked: dict, answer_data: dict,
                   timings: dict, chunk_files: set[str]) -> dict:
     """Build the final answer record for answers.jsonl."""
     ts = datetime.now().isoformat(timespec="seconds")
@@ -212,12 +182,14 @@ def _build_record(run_id: str, question: str, understanding: dict,
             "rrf": p.get("rrf", 0),
         })
 
+    answer_text = answer_data.get("text", "")
+
     rec = {
         "id": answer_id,
         "ts": ts,
         "question": question,
-        "status": verified.get("status", "answered"),
-        "partial": verified.get("partial", False),
+        "status": answer_data.get("status", "answered"),
+        "partial": answer_data.get("partial", False),
         "understanding": {
             "intent": understanding.get("intent", "other"),
             "answer_type": understanding.get("answer_type", "paragraph"),
@@ -225,9 +197,10 @@ def _build_record(run_id: str, question: str, understanding: dict,
             "queries": understanding.get("queries", []),
             "sub_questions": understanding.get("sub_questions", []),
         },
-        "claims": verified.get("claims", []),
+        "answer": answer_text,
+        "claims": answer_data.get("claims", []),
         "evidence": evidence,
-        "dropped_claims": verified.get("dropped_claims", []),
+        "dropped_claims": answer_data.get("dropped_claims", []),
         "timings": timings,
         "versions": {
             "qa_model": QA_MODEL,
@@ -235,9 +208,13 @@ def _build_record(run_id: str, question: str, understanding: dict,
             "filter": "qwen_llm_semantic",
             "pipeline": PIPELINE_VERSION,
         },
+        "polished": {
+            "text": answer_text,
+            "fallback": False,
+            "words": len(answer_text.split()),
+            "answer_s": timings.get("answer_s", 0),
+        },
     }
-    if polished is not None:
-        rec["polished"] = polished
     return rec
 
 

@@ -4,11 +4,11 @@ Constants for the Document Q&A pipeline.
 """
 
 QA_MODEL = "qwen2.5:3b"
-PIPELINE_VERSION = "qa-v1.2"
+PIPELINE_VERSION = "pass7"
 QA_DEBUG = False                      # keep run artifacts after success if True
 
-NUM_CTX_UNDERSTAND, NUM_CTX_ANSWER = 1024, 3072      # Q4, Q5 and Q6 share NUM_CTX_ANSWER
-NUM_PREDICT_UNDERSTAND, NUM_PREDICT_ANSWER, NUM_PREDICT_VERIFY = 220, 360, 12
+NUM_CTX_UNDERSTAND, NUM_CTX_ANSWER = 1024, 4096      # context window for answer generation
+NUM_PREDICT_UNDERSTAND, NUM_PREDICT_ANSWER, NUM_PREDICT_VERIFY = 220, 768, 12
 DEDUPE_JACCARD = 0.8
 
 POLISH_MAX_KEYPOINTS    = 5          # replaces CONSOLIDATE_MAX_CLAIMS

@@ -187,8 +187,30 @@ def run(session_id: str, run_id: str) -> dict | None:
 
     try:
         # Check paths
+        pol_path = qa_paths.polished_path(session_id, run_id)
+        if os.path.exists(pol_path):
+            try:
+                with open(pol_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+
         v_path = qa_paths.verified_path(session_id, run_id)
         a_path = qa_paths.answer_path(session_id, run_id)
+        if os.path.exists(a_path):
+            try:
+                with open(a_path, "r", encoding="utf-8") as f:
+                    a_data = json.load(f)
+                if a_data.get("text") and a_data.get("status") != "not_found":
+                    return {
+                        "text": a_data["text"],
+                        "fallback": False,
+                        "words": len(a_data["text"].split()),
+                        "polish_s": 0.0,
+                    }
+            except Exception:
+                pass
+
         u_path = qa_paths.understanding_path(session_id, run_id)
         r_path = qa_paths.reranked_path(session_id, run_id)
 

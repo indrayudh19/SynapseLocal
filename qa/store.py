@@ -59,6 +59,9 @@ def display_text(record: dict) -> str:
     if isinstance(polished, dict) and polished.get("text"):
         return polished["text"].strip()
 
+    if isinstance(record.get("answer"), str) and record.get("answer").strip():
+        return record["answer"].strip()
+
     consolidated = record.get("consolidated")
     if isinstance(consolidated, dict):
         lead = consolidated.get("lead", {})
